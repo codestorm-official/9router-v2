@@ -93,10 +93,9 @@ export async function authMiddleware(
 
     // If login not required and path not always-protected
     if (!requireLogin && !alwaysProtected) {
-      const isProtected = PROTECTED_API_PATHS.some(
-        (p) => path === p || path.startsWith(p + "/")
-      );
-      if (!isProtected) return next();
+      // Protected paths are only enforced when requireLogin=true.
+      // When login is not required, allow dashboard API paths freely.
+      return next();
     }
 
     // Check API key for LLM endpoints
