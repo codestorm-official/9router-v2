@@ -241,9 +241,11 @@ def enroll_canva_via_email(page, invite_link: str, email: str, password: str, se
             req.add_header("Accept", "application/json")
             req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
             with urllib.request.urlopen(req, timeout=10) as res:
-                log_step("Inbox ammail dibuat/sudah ada")
+                res_data = json.loads(res.read().decode())
+                addr = (res_data.get("inbox") or {}).get("address", email)
+                log_step(f"Inbox siap: {addr}")
         except Exception as e:
-            log_step(f"Warning: inbox ammail: {e}")
+            log_step(f"[WARN] Inbox ammail: {e}")
 
     log_step("Membuka Canva invite link...")
     page.goto(invite_link, wait_until="domcontentloaded", timeout=60000)
@@ -377,7 +379,7 @@ def enroll_canva_via_email(page, invite_link: str, email: str, password: str, se
             except Exception: pass
 
         if otp_loc and not otp_filled:
-            log_step("Menunggu OTP dari ammail...")
+            log_step(f"OTP screen terdeteksi — polling ammail ({email.split('@')[0]})...")
             otp_code, verify_url = wait_for_otp_from_db(email, otp_since_ts, settings)
             if otp_code:
                 digits = re.sub(r"\D", "", otp_code)
@@ -405,10 +407,12 @@ def enroll_canva_via_email(page, invite_link: str, email: str, password: str, se
                 _react_invoke_click(page, "Join")
             time.sleep(3)
         
-        # Log current state setiap 10 detik supaya tidak buta
+        # Log current state setiap 10 detik — tampilkan fase + URL pendek
         elapsed = int(time.time() - START_TIME)
         if elapsed % 10 < 2:
-            log_step(f"Menunggu... URL: {page.url[:60]}")
+            short = page.url.replace("https://","").replace("www.","")[:55]
+            phase = "OTP dikirim" if otp_filled else ("Menunggu OTP" if otp_loc else "Inisialisasi")
+            log_step(f"[{phase}] {short}")
 
         time.sleep(2)
     return False
@@ -491,10 +495,12 @@ def run_automation(email, password, invite_link, proxy=None, headless=True):
             sys.stdout.flush()
 
             # 2. Leonardo Signup
-            log_step("Membuka Leonardo AI...")
+            log_step("Membuka Leonardo AI — login page...")
             page.goto("https://app.leonardo.ai/auth/login", wait_until="domcontentloaded", timeout=60000)
             time.sleep(3)
+            log_step("Klik 'Continue with Canva'...")
             click_first(page, ["button:has-text('Continue with Canva')"], timeout_ms=15000)
+            log_step("Menunggu popup OAuth Canva...")
             time.sleep(5)
 
             # Handle Canva Authorize popup
@@ -504,8 +510,9 @@ def run_automation(email, password, invite_link, proxy=None, headless=True):
                     auth_page = pg; break
 
             if auth_page:
-                log_step("Mengklik Authorize di Canva...")
+                log_step("OAuth Canva popup — klik Allow/Authorize...")
                 _click_canva_authorize_v2(auth_page, email)
+                log_step("Authorize diklik, tunggu redirect ke Leonardo...")
                 time.sleep(5)
 
             # Tunggu Leonardo dashboard (max 60s)
@@ -518,13 +525,14 @@ def run_automation(email, password, invite_link, proxy=None, headless=True):
                 # Cek popup auth
                 for pg in browser.pages:
                     if "canva.com/api/oauth/authorize" in pg.url and pg != auth_page:
-                        log_step("Authorize popup muncul lagi...")
+                        log_step("OAuth popup muncul lagi — klik Allow...")
                         _click_canva_authorize_v2(pg, email)
                         auth_page = pg
                 time.sleep(2)
 
             # Extract Leonardo cookies
-            log_step("Mengekstrak session Leonardo...")
+            log_step(f"Dashboard Leonardo tercapai: {page.url[:60]}")
+            log_step("Mengekstrak cookies + JWT session Leonardo...")
             all_cookies = page.context.cookies()
             leo_cookies = [c for c in all_cookies if "leonardo.ai" in (c.get("domain") or "")]
             cookie_str = "; ".join(f"{c['name']}={c['value']}" for c in leo_cookies)
