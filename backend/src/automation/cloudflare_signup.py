@@ -81,6 +81,73 @@ def wait_for_cf_verify_email(base_url, api_key, email, timeout=120):
         time.sleep(5)
     return None
 
+# ── 2Captcha Turnstile solver ───────────────────────────────────────────────────
+CF_SIGNUP_TURNSTILE_SITEKEY = "0x4AAAAAAAJel0iaAR3mgkjp"
+CF_SIGNUP_PAGE_URL = "https://dash.cloudflare.com/sign-up"
+
+def solve_turnstile_2captcha(api_key, page_url, sitekey, timeout=120):
+    """Submit Turnstile to 2Captcha and wait for solution token."""
+    log_step("Mengirim Turnstile ke 2Captcha untuk diselesaikan...")
+    try:
+        # Submit task
+        submit_data = {
+            "key": api_key,
+            "method": "turnstile",
+            "sitekey": sitekey,
+            "pageurl": page_url,
+            "json": 1,
+        }
+        encoded = urllib.parse.urlencode(submit_data).encode()
+        req = urllib.request.Request("https://2captcha.com/in.php", data=encoded)
+        with urllib.request.urlopen(req, timeout=15) as r:
+            resp = json.loads(r.read())
+        if not resp.get("status") == 1:
+            log_step(f"2Captcha submit error: {resp}")
+            return None
+        task_id = resp.get("request")
+        log_step(f"2Captcha task submitted: {task_id}")
+
+        # Poll for result
+        deadline = time.time() + timeout
+        time.sleep(15)  # initial wait
+        while time.time() < deadline:
+            res_url = f"https://2captcha.com/res.php?key={api_key}&action=get&id={task_id}&json=1"
+            req2 = urllib.request.Request(res_url)
+            with urllib.request.urlopen(req2, timeout=15) as r2:
+                res = json.loads(r2.read())
+            if res.get("status") == 1:
+                token = res.get("request")
+                log_step(f"2Captcha Turnstile solved!")
+                return token
+            if res.get("request") == "ERROR_CAPTCHA_UNSOLVABLE":
+                log_step("2Captcha: captcha unsolvable")
+                return None
+            time.sleep(5)
+        log_step("2Captcha Turnstile timeout")
+        return None
+    except Exception as e:
+        log_step(f"2Captcha error: {e}")
+        return None
+
+def inject_turnstile_token(page, token):
+    """Inject solved Turnstile token into the page."""
+    try:
+        page.evaluate(f"""
+        (function() {{
+            // Set cf-turnstile-response hidden input
+            var inputs = document.querySelectorAll('input[name="cf-turnstile-response"], input[name="cf_challenge_response"]');
+            inputs.forEach(function(el) {{ el.value = '{token}'; }});
+            // Also try window.turnstile callback
+            if (window.turnstile && window.turnstile.getResponse) {{
+                try {{ window.turnstile.execute(); }} catch(e) {{}}
+            }}
+        }})();
+        """)
+        return True
+    except Exception as e:
+        log_step(f"inject_turnstile_token error: {e}")
+        return False
+
 # ── Turnstile bypass (ported from weavy_signup.py) ─────────────────────────────
 def is_on_turnstile_page(page) -> bool:
     try:
@@ -320,6 +387,7 @@ def main():
     parser.add_argument("--proxy-server")
     parser.add_argument("--proxy-user")
     parser.add_argument("--proxy-pass")
+    parser.add_argument("--2captcha-key", default="", dest="captcha_key")
     args = parser.parse_args()
 
     # Import Camoufox (same as weavy_signup.py)
@@ -421,9 +489,39 @@ def main():
             time.sleep(0.3)
 
         # ── Step 4: Handle Turnstile ──────────────────────────────────────────
-        log_step("Menunggu Turnstile captcha selesai...")
+        log_step("Menangani Turnstile captcha...")
         time.sleep(3)
-        wait_for_cf_clearance(page, timeout=30)
+
+        # First try auto-solve (works sometimes in non-headless)
+        turnstile_solved = False
+        wait_for_cf_clearance(page, timeout=10)
+
+        # Check if already solved
+        try:
+            token_val = page.evaluate("() => { const el = document.getElementsByName('cf_challenge_response')[0]; return el ? el.value : ''; }")
+            if token_val and len(token_val.strip()) > 10:
+                turnstile_solved = True
+                log_step("Turnstile auto-solved!")
+        except Exception:
+            pass
+
+        # Fallback: 2Captcha
+        if not turnstile_solved and args.captcha_key:
+            log_step("Turnstile belum solved, pakai 2Captcha...")
+            token_2c = solve_turnstile_2captcha(
+                args.captcha_key,
+                CF_SIGNUP_PAGE_URL,
+                CF_SIGNUP_TURNSTILE_SITEKEY,
+                timeout=120,
+            )
+            if token_2c:
+                inject_turnstile_token(page, token_2c)
+                turnstile_solved = True
+                time.sleep(1)
+            else:
+                log_step("2Captcha gagal, tetap coba submit...")
+        elif not turnstile_solved:
+            log_step("Tidak ada 2Captcha key, lanjut submit tanpa solve...")
 
         # ── Step 5: Submit form ───────────────────────────────────────────────
         log_step("Submit form registrasi...")

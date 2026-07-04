@@ -720,6 +720,11 @@ function executeCodeBuddySignup(accountId, jobId, idx, settings) {
           args.push(`--ammail-api-key=${ammailApiKey}`);
           args.push(`--ammail-domain=${ammailDomain}`);
         }
+        // 2Captcha for Turnstile
+        const captchaKey = settings.codebuddy_2captcha_api_key || "";
+        if (captchaKey) {
+          args.push(`--2captcha-key=${captchaKey}`);
+        }
       } else if (isWeavy) {
         if (account.signupMethod === "google" || account.email.endsWith("@gmosel.com") || account.email.endsWith("@gmail.com")) {
           args.push("--gsuite");
