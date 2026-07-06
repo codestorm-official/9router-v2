@@ -293,6 +293,15 @@ input, textarea {
 .traffic-light.yellow { background: #FFBD2E; }
 .traffic-light.green { background: #27C93F; }
 
+/* Self-hosted so dashboard icons do not depend on Google Fonts at runtime. */
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: block;
+  src: url('/fonts/material-symbols-outlined.woff2') format('woff2');
+}
+
 /* Material Symbols */
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined', sans-serif;
