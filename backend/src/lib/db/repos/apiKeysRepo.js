@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { getAdapter } from "../driver.js";
+import { generateApiKeyWithMachine } from "../../../shared/utils/apiKey.js";
 
 function rowToKey(row) {
   if (!row) return null;
@@ -28,7 +29,6 @@ export async function getApiKeyById(id) {
 export async function createApiKey(name, machineId) {
   if (!machineId) throw new Error("machineId is required");
   const db = await getAdapter();
-  const { generateApiKeyWithMachine } = await import("../../../shared/utils/apiKey");
   const result = generateApiKeyWithMachine(machineId);
   const apiKey = {
     id: uuidv4(),

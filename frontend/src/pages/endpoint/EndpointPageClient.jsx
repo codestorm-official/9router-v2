@@ -65,6 +65,8 @@ export default function APIPageClient({ machineId }) {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [createKeyError, setCreateKeyError] = useState("");
   const [createdKey, setCreatedKey] = useState(null);
   const [confirmState, setConfirmState] = useState(null);
 
@@ -715,22 +717,28 @@ export default function APIPageClient({ machineId }) {
   const handleCreateKey = async () => {
     if (!newKeyName.trim()) return;
 
+    setCreatingKey(true);
+    setCreateKeyError("");
     try {
       const res = await fetch("/api/keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newKeyName }),
+        body: JSON.stringify({ name: newKeyName.trim() }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (res.ok) {
         setCreatedKey(data.key);
         await fetchData();
         setNewKeyName("");
         setShowAddModal(false);
+      } else {
+        setCreateKeyError(data.error || `Failed to create API key (${res.status})`);
       }
     } catch (error) {
-      console.log("Error creating key:", error);
+      setCreateKeyError(error instanceof Error ? error.message : "Failed to create API key");
+    } finally {
+      setCreatingKey(false);
     }
   };
 
@@ -1240,26 +1248,42 @@ export default function APIPageClient({ machineId }) {
         onClose={() => {
           setShowAddModal(false);
           setNewKeyName("");
+          setCreateKeyError("");
         }}
       >
         <div className="flex flex-col gap-4">
           <Input
             label="Key Name"
             value={newKeyName}
-            onChange={(e) => setNewKeyName(e.target.value)}
+            onChange={(e) => {
+              setNewKeyName(e.target.value);
+              if (createKeyError) setCreateKeyError("");
+            }}
             placeholder="Production Key"
           />
+          {createKeyError && (
+            <p role="alert" className="text-sm text-red-500">
+              {createKeyError}
+            </p>
+          )}
           <div className="flex gap-2">
-            <Button onClick={handleCreateKey} fullWidth disabled={!newKeyName.trim()}>
+            <Button
+              onClick={handleCreateKey}
+              fullWidth
+              disabled={!newKeyName.trim()}
+              loading={creatingKey}
+            >
               Create
             </Button>
             <Button
               onClick={() => {
                 setShowAddModal(false);
                 setNewKeyName("");
+                setCreateKeyError("");
               }}
               variant="ghost"
               fullWidth
+              disabled={creatingKey}
             >
               Cancel
             </Button>

@@ -19,7 +19,7 @@ export async function GET(req, res) {
 export async function POST_handler(req, res) {
   try {
     const body = req.body;
-    const { name } = body;
+    const name = typeof body?.name === "string" ? body.name.trim() : "";
 
     if (!name) {
       return res.status(400).json({ error: "Name is required" });
