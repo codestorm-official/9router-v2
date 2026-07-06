@@ -1675,14 +1675,18 @@ def main():
             page.screenshot(path="/tmp/cf_before_continue.png")
 
             def _is_summary_page():
-                """CF uses React SPA — URL never changes. Detect summary by content."""
+                """CF uses React SPA — URL never changes. Detect summary by content.
+                IMPORTANT: use 'token will affect' only — NOT 'summary' which matches
+                the 'Continue to summary' BUTTON TEXT on the form page (false positive)."""
                 try:
                     txt = page.inner_text("body")
-                    return ("summary" in txt.lower() or "token will affect" in txt)
+                    # "token will affect" only appears on the actual summary page
+                    # "Workers AI API token summary" also works
+                    return ("token will affect" in txt or "API token summary" in txt)
                 except Exception:
                     return False
 
-            continue_clicked = _is_summary_page()  # maybe already on summary
+            continue_clicked = False  # always try clicking Continue first
             if not continue_clicked:
                 for sel in [
                     "button:has-text('Continue to summary')",
