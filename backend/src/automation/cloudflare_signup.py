@@ -583,15 +583,29 @@ def main():
         launch_kwargs["proxy"] = proxy_dict
         launch_kwargs["geoip"] = True  # match geolocation to proxy IP (suppresses LeakWarning)
 
-    try:
-        browser_ctx = Camoufox(**launch_kwargs)
-    except TypeError:
-        launch_kwargs.pop("os", None)
+    def _make_camoufox(kw):
+        """Launch Camoufox, stripping unsupported kwargs one by one."""
         try:
-            browser_ctx = Camoufox(**launch_kwargs)
+            return Camoufox(**kw)
         except TypeError:
-            launch_kwargs.pop("locale", None)
-            browser_ctx = Camoufox(**launch_kwargs)
+            kw.pop("os", None)
+            try:
+                return Camoufox(**kw)
+            except TypeError:
+                kw.pop("locale", None)
+                return Camoufox(**kw)
+
+    try:
+        browser_ctx = _make_camoufox(dict(launch_kwargs))
+    except Exception as _pe:
+        _ps = str(_pe)
+        if proxy_dict and any(k in _ps for k in ("InvalidProxy","Tunnel connection","Failed to connect to proxy","ProxyError")):
+            log_step(f"Proxy dead ({proxy_dict.get('server','?')}) — fallback tanpa proxy")
+            launch_kwargs.pop("proxy", None)
+            launch_kwargs.pop("geoip", None)
+            browser_ctx = _make_camoufox(dict(launch_kwargs))
+        else:
+            raise
 
     with browser_ctx as browser:
         page = browser.new_page()
@@ -1592,51 +1606,90 @@ def main():
             except Exception:
                 pass
 
-            # 6. Scroll down and click "Continue to summary"
+            # 6. Fill Account Resources then click "Continue to summary"
             time.sleep(1)
             page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             time.sleep(1)
+
+            # Account Resources must be set — template leaves it as "Select..."
+            # Try JS: find "Select..." placeholder and click it, then pick "All accounts"
+            try:
+                ar_result = page.evaluate("""
+                    () => {
+                        const all = Array.from(document.querySelectorAll('*'));
+                        for (const el of all) {
+                            if (el.children.length === 0 && el.textContent.trim() === 'Select...') {
+                                el.click();
+                                return 'clicked: ' + el.tagName;
+                            }
+                        }
+                        return 'not found';
+                    }
+                """)
+                log_step(f"Account Resources Select...: {ar_result}")
+                if "clicked" in ar_result:
+                    time.sleep(0.8)
+                    for opt_sel in ["text='All accounts'", "[role='option']:has-text('All accounts')", "li:has-text('All accounts')"]:
+                        try:
+                            opt = page.locator(opt_sel).first
+                            if opt.count() > 0 and opt.is_visible(timeout=1500):
+                                opt.click()
+                                time.sleep(0.5)
+                                log_step("Account Resources: All accounts selected")
+                                break
+                        except Exception:
+                            continue
+            except Exception as e:
+                log_step(f"Account Resources error: {e}")
+
             page.screenshot(path="/tmp/cf_before_continue.png")
 
-            continue_clicked = False
-            for sel in [
-                "button:has-text('Continue to summary')",
-                "input[value*='Continue']",
-                "button:has-text('Continue')",
-                "button:has-text('Review')",
-                "button[type='submit']",
-            ]:
+            def _is_summary_page():
+                """CF uses React SPA — URL never changes. Detect summary by content."""
                 try:
-                    loc = page.locator(sel).first
-                    if loc.count() > 0 and loc.is_visible(timeout=3000):
-                        loc.scroll_into_view_if_needed()
-                        time.sleep(0.3)
-                        url_before = page.url
-                        bbox = loc.bounding_box()
-                        if bbox:
-                            page.mouse.move(bbox['x'] + bbox['width']/2, bbox['y'] + bbox['height']/2)
-                            time.sleep(0.2)
-                            page.mouse.click(bbox['x'] + bbox['width']/2, bbox['y'] + bbox['height']/2)
-                            log_step(f"Mouse.click Continue via: {sel}")
-                        else:
-                            loc.click()
-                        time.sleep(3)
-                        page.screenshot(path="/tmp/cf_after_continue.png")
-                        if page.url != url_before:
-                            log_step(f"Navigated to summary: {page.url[:60]}")
-                            continue_clicked = True
-                            break
-                        log_step(f"'{sel}' clicked but URL unchanged")
-                        # Check error message
-                        try:
-                            err = page.evaluate("Array.from(document.querySelectorAll('[class*=error],[class*=alert],[role=alert]')).map(e=>e.innerText).join(' ')")
-                            if err:
-                                log_step(f"Form error after continue: {err[:200]}")
-                        except Exception:
-                            pass
-                except Exception as e:
-                    log_step(f"Continue selector '{sel}' failed: {e}")
-                    continue
+                    txt = page.inner_text("body")
+                    return ("summary" in txt.lower() or "token will affect" in txt)
+                except Exception:
+                    return False
+
+            continue_clicked = _is_summary_page()  # maybe already on summary
+            if not continue_clicked:
+                for sel in [
+                    "button:has-text('Continue to summary')",
+                    "input[value*='Continue']",
+                    "button:has-text('Continue')",
+                    "button:has-text('Review')",
+                    "button[type='submit']",
+                ]:
+                    try:
+                        loc = page.locator(sel).first
+                        if loc.count() > 0 and loc.is_visible(timeout=3000):
+                            loc.scroll_into_view_if_needed()
+                            time.sleep(0.3)
+                            bbox = loc.bounding_box()
+                            if bbox:
+                                page.mouse.move(bbox['x'] + bbox['width']/2, bbox['y'] + bbox['height']/2)
+                                time.sleep(0.2)
+                                page.mouse.click(bbox['x'] + bbox['width']/2, bbox['y'] + bbox['height']/2)
+                                log_step(f"Mouse.click Continue via: {sel}")
+                            else:
+                                loc.click()
+                            time.sleep(3)
+                            page.screenshot(path="/tmp/cf_after_continue.png")
+                            if _is_summary_page():
+                                log_step("Summary page detected (React routing)")
+                                continue_clicked = True
+                                break
+                            log_step(f"'{sel}' clicked, not on summary yet")
+                            try:
+                                err = page.evaluate("Array.from(document.querySelectorAll('[class*=error],[class*=alert],[role=alert]')).map(e=>e.innerText).join(' ')")
+                                if err:
+                                    log_step(f"Form error: {err[:200]}")
+                            except Exception:
+                                pass
+                    except Exception as e:
+                        log_step(f"Continue '{sel}' failed: {e}")
+                        continue
 
             log_step(f"Continue to summary: {continue_clicked}")
 
