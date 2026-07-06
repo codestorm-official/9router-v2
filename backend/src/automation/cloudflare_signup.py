@@ -1276,25 +1276,39 @@ def main():
                                 page.screenshot(path="/tmp/cf_gak_before_ts.png")
                                 _ts_clicked = False
 
-                                # Method 1: Direct frame object from page.frames (bypasses DOM lookup)
+                                # Inspect Turnstile frame content
                                 ts_frame_obj = next((f for f in page.frames if 'challenges.cloudflare.com' in (f.url or '')), None)
-                                log_step(f"GAK TS frame obj: {ts_frame_obj.url[:60] if ts_frame_obj else None}")
                                 if ts_frame_obj:
-                                    for _fsel in ["input[type='checkbox']", "input", "label", "body"]:
-                                        try:
-                                            _fcnt = ts_frame_obj.locator(_fsel).count()
-                                            log_step(f"GAK TS frame.locator({_fsel}) count={_fcnt}")
-                                            if _fcnt > 0:
-                                                ts_frame_obj.locator(_fsel).first.click(timeout=5000)
-                                                time.sleep(10)
-                                                log_step(f"GAK TS frame.locator click: {_fsel}")
-                                                _ts_clicked = True
-                                                break
-                                        except Exception as _fe:
-                                            log_step(f"GAK TS frame({_fsel}) err: {str(_fe)[:80]}")
+                                    try:
+                                        _fhtml = ts_frame_obj.evaluate("document.body ? document.body.innerHTML.slice(0,500) : 'NO BODY'")
+                                        log_step(f"GAK TS frame HTML: {_fhtml}")
+                                        # Try shadow DOM click via evaluate
+                                        _shadow_clicked = ts_frame_obj.evaluate("""
+                                            () => {
+                                                const tryClick = (el) => {
+                                                    if (!el) return false;
+                                                    const inp = el.querySelector('input[type=checkbox]') || el.querySelector('input') || el.querySelector('label');
+                                                    if (inp) { inp.click(); return true; }
+                                                    for (const ch of el.children) {
+                                                        const sr = ch.shadowRoot;
+                                                        if (sr) {
+                                                            const inp2 = sr.querySelector('input[type=checkbox]') || sr.querySelector('input') || sr.querySelector('label');
+                                                            if (inp2) { inp2.click(); return true; }
+                                                        }
+                                                    }
+                                                    return false;
+                                                };
+                                                return tryClick(document.body);
+                                            }
+                                        """)
+                                        log_step(f"GAK TS shadow click: {_shadow_clicked}")
+                                        if _shadow_clicked:
+                                            time.sleep(10)
+                                            _ts_clicked = True
+                                    except Exception as _fe:
+                                        log_step(f"GAK TS frame eval: {str(_fe)[:80]}")
 
-                                # Method 2: Mouse click at approximate Turnstile position from screenshot
-                                # Screenshot shows checkbox at ~x=547, y=432 on 1456×816 viewport
+                                # Method 2: Mouse click at Turnstile checkbox position
                                 if not _ts_clicked:
                                     try:
                                         page.mouse.click(547, 432)
@@ -1317,9 +1331,18 @@ def main():
                                         b = page.locator(btn_sel).first
                                         if b.count() > 0 and b.is_visible(timeout=2000):
                                             b.click()
-                                            time.sleep(5)
+                                            time.sleep(15)  # wait for Camoufox Turnstile auto-solve
                                             log_step(f"OTP submitted via: {btn_sel}")
                                             page.screenshot(path="/tmp/cf_gak_after_submit.png")
+                                            # Check if CAPTCHA error still shown → retry once
+                                            _body_txt = page.inner_text("body")
+                                            if "CAPTCHA" in _body_txt or "captcha" in _body_txt:
+                                                log_step("CAPTCHA still shown, wait 10s more...")
+                                                time.sleep(10)
+                                                b2 = page.locator(btn_sel).first
+                                                if b2.count() > 0 and b2.is_visible(timeout=2000):
+                                                    b2.click()
+                                                    time.sleep(10)
                                             break
                                     except Exception:
                                         continue
