@@ -1170,9 +1170,10 @@ def main():
                                 break
 
 
-                        # Dismiss consent overlay before looking for OTP input
-                        try:
-                            page.evaluate("""
+                        if otp_code:
+                            # Dismiss consent overlay before looking for OTP input
+                            try:
+                                page.evaluate("""
                                     () => {
                                         const ot = document.querySelector('#onetrust-banner-sdk, #onetrust-consent-sdk');
                                         if (ot) ot.style.display = 'none';
