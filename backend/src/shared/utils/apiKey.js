@@ -1,6 +1,21 @@
 import crypto from "crypto";
+import fs from "node:fs";
+import path from "node:path";
+import { DATA_DIR } from "../../lib/dataDir.js";
 
-const API_KEY_SECRET = process.env.API_KEY_SECRET || "endpoint-proxy-api-key-secret";
+function loadApiKeySecret() {
+  if (process.env.API_KEY_SECRET) return process.env.API_KEY_SECRET;
+  const file = path.join(DATA_DIR, "api-key-secret");
+  try {
+    return fs.readFileSync(file, "utf8").trim();
+  } catch {}
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  const generated = crypto.randomBytes(32).toString("hex");
+  fs.writeFileSync(file, generated, { mode: 0o600 });
+  return generated;
+}
+
+const API_KEY_SECRET = loadApiKeySecret();
 
 /**
  * Generate 6-char random keyId
@@ -95,4 +110,3 @@ export function isNewFormatKey(apiKey) {
   const parsed = parseApiKey(apiKey);
   return parsed?.isNewFormat === true;
 }
-

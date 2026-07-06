@@ -179,6 +179,10 @@ Heroku injects `PORT` automatically.
 
 ### Deploy to Railway
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/9router-v3?referralCode=asepsp&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
+**OR**
+
 1. Create a service from this repository.
 2. Copy variables from `backend/.env.example` into the **Variables** tab.
 3. Attach a Railway Volume at `/data`.
