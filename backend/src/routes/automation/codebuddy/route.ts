@@ -41,6 +41,7 @@ import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import crypto from "crypto";
 import { getSettings, updateSettings } from "../../../lib/localDb.js";
+import { getDataDir } from "../../../lib/dataDir.js";
 import { getAmmailClientFromSettings } from "../../../lib/automation/ammailClient.js";
 import { 
   listCodeBuddyAccounts, getCodeBuddyAccount, insertCodeBuddyAccount,
@@ -770,7 +771,7 @@ function executeCodeBuddySignup(accountId, jobId, idx, settings) {
       }
 
       try {
-        const logDir = "/home/ahwanulm/.9router-v2/logs";
+        const logDir = path.join(getDataDir(), "logs");
         fs.mkdirSync(logDir, { recursive: true });
         fs.appendFileSync(
           `${logDir}/automation_spawn.log`,

@@ -125,7 +125,7 @@ export default function Sidebar({ onClose }) {
               <h1 className="text-lg font-semibold tracking-tight text-text-main leading-tight">
                 9Router v2
               </h1>
-              <span className="text-[10px] text-text-muted mt-0.5 leading-none">by ahwanulm</span>
+              <span className="text-[10px] text-text-muted mt-0.5 leading-none">fork by CodeStorm Official</span>
               <span className="text-[10px] text-text-muted opacity-75 mt-0.5 leading-none">v{APP_CONFIG.version}</span>
             </div>
           </Link>

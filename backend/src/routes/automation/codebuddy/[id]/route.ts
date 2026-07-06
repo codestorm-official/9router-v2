@@ -3,6 +3,7 @@ import { spawn } from "child_process";
 import path from "path";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
+import { getDataDir } from "../../../../lib/dataDir.js";
 
 // Parse any proxy string format → { server, username, password }
 function parseProxyString(raw) {
@@ -259,7 +260,7 @@ function executeCodeBuddySignupSingle(accountId, jobId, settings) {
       }
 
       try {
-        const logDir = "/home/ahwanulm/.9router-v2/logs";
+        const logDir = path.join(getDataDir(), "logs");
         fs.mkdirSync(logDir, { recursive: true });
         fs.appendFileSync(
           `${logDir}/automation_spawn.log`,
