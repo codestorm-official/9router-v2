@@ -1,12 +1,12 @@
 {
   "name": "9router-backend",
-  "version": "0.5.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
-  "description": "9Router v2 — Express Backend (API, SSE, DB, Auth, MITM)",
+  "description": "9Router V3 by codestorm — Express backend",
   "main": "src/server.ts",
   "bin": {
-    "9router-v2": "bin/cli.cjs"
+    "9router-v3": "bin/cli.cjs"
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",

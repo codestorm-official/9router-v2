@@ -1,6 +1,25 @@
-# 9Router v2 Changelog
+# 9Router V3 Changelog
 
-All notable changes to the decoupled **9Router v2** platform will be documented here.
+All notable changes to the **9Router V3** platform will be documented here.
+
+---
+
+## [v3.0.0] - 2026-07-06
+
+### Changed
+
+- Rebranded the product and dashboard as **9Router V3 by codestorm**.
+- Added a custom transparent V3 logo and favicon.
+- Rebuilt the README with an attributed comparison of original 9Router, V2, and V3.
+- Reworked the login donation QR into a smaller framed showcase.
+- Renamed default local runtime directories and Linux deployment examples to `9router-v3`.
+- Removed the legacy screenshot directory and its README references.
+
+### Railway
+
+- Retained the single-service multi-stage Docker deployment.
+- Uses `/data` through a Railway Volume without a Docker `VOLUME` instruction.
+- Uses Railway-provided public-domain information for OIDC URLs.
 
 ---
 

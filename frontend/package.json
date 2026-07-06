@@ -1,9 +1,9 @@
 {
   "name": "9router-frontend",
   "private": true,
-  "version": "0.5.0",
+  "version": "3.0.0",
   "type": "module",
-  "description": "9Router v2 — Vite + React + TypeScript Dashboard",
+  "description": "9Router V3 by codestorm — Vite + React dashboard",
   "scripts": {
     "dev": "vite --port 5177",
     "build": "tsc -b && vite build",

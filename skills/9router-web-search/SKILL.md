@@ -1,11 +1,11 @@
 ---
 name: 9router-web-search
-description: Web search via 9Router /v1/search using Tavily / Exa / Brave / Serper / SearXNG / Google PSE / Linkup / SearchAPI / You.com / Perplexity. Use when the user wants to search the web, look up information, find articles, or query a search engine.
+description: Web search via 9Router V3 /v1/search using Tavily / Exa / Brave / Serper / SearXNG / Google PSE / Linkup / SearchAPI / You.com / Perplexity. Use when the user wants to search the web, look up information, find articles, or query a search engine.
 ---
 
-# 9Router — Web Search
+# 9Router V3 — Web Search
 
-Requires `NINEROUTER_URL` (and `NINEROUTER_KEY` if auth enabled). See https://raw.githubusercontent.com/decolua/9router/refs/heads/master/skills/9router/SKILL.md for setup.
+Requires `NINEROUTER_URL` (and `NINEROUTER_KEY` if auth enabled). See https://raw.githubusercontent.com/codestorm-official/9router-v2/refs/heads/master/skills/9router/SKILL.md for setup.
 
 ## Discover
 
@@ -35,7 +35,7 @@ IDs end in `/search` (e.g. `tavily/search`). Combos (`owned_by:"combo"`) chain p
 curl -X POST $NINEROUTER_URL/v1/search \
   -H "Authorization: Bearer $NINEROUTER_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model":"tavily","query":"9Router open source","max_results":5}'
+  -d '{"model":"tavily","query":"9Router V3 open source","max_results":5}'
 ```
 
 JS:
@@ -54,7 +54,7 @@ console.log(await r.json());
 ```json
 {
   "provider": "tavily",
-  "query": "9Router open source",
+  "query": "9Router V3 open source",
   "results": [
     {
       "title": "...", "url": "https://...", "display_url": "github.com/...",

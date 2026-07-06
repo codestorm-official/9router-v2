@@ -34,7 +34,7 @@ app.use(express.urlencoded({ extended: true, limit: "128mb" }));
 
 // ─── Health Check (no auth) ────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", version: "0.5.0", ts: Date.now() });
+  res.json({ status: "ok", version: "3.0.0", ts: Date.now() });
 });
 
 // ─── Auth Middleware ───────────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ async function start() {
   });
 
   app.listen(PORT, () => {
-    console.log(`\n🚀 9Router Backend v2 running on http://localhost:${PORT}`);
+    console.log(`\n🚀 9Router V3 Backend running on http://localhost:${PORT}`);
     console.log(`   Frontend origin: ${FRONTEND_ORIGIN}`);
     console.log(`   Environment: ${process.env.NODE_ENV || "development"}\n`);
   });

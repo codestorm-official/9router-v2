@@ -120,12 +120,12 @@ export default function Sidebar({ onClose }) {
         {/* Logo */}
         <div className="px-6 py-4 flex flex-col gap-2">
           <Link to="/dashboard" className="flex items-center gap-3">
-            <img src="/logo_v2.png" alt="9Router v2" className="size-9 rounded-[10px] object-cover" />
+            <img src="/branding/9router-v3-logo.png" alt="9Router V3" className="size-9 rounded-[10px] object-contain" />
             <div className="flex flex-col">
               <h1 className="text-lg font-semibold tracking-tight text-text-main leading-tight">
-                9Router v2
+                9Router V3
               </h1>
-              <span className="text-[10px] text-text-muted mt-0.5 leading-none">fork by CodeStorm Official</span>
+              <span className="text-[10px] text-text-muted mt-0.5 leading-none">by codestorm</span>
               <span className="text-[10px] text-text-muted opacity-75 mt-0.5 leading-none">v{APP_CONFIG.version}</span>
             </div>
           </Link>
@@ -338,7 +338,7 @@ export default function Sidebar({ onClose }) {
         isOpen={showUpdateModal}
         onClose={() => setShowUpdateModal(false)}
         onConfirm={handleUpdate}
-        title="Update 9Router"
+        title="Update 9Router V3"
         message={`Show install command for v${updateInfo?.latestVersion || ""}? You can copy it and shutdown to install manually.`}
         confirmText="Show Command"
         cancelText="Cancel"
@@ -389,7 +389,7 @@ function ManualUpdatePanel({ latestVersion, installCmd, copied, onCopyAndShutdow
           <span className="material-symbols-outlined text-[24px]">content_copy</span>
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Update 9Router{latestVersion ? ` to v${latestVersion}` : ""}</h2>
+          <h2 className="text-lg font-semibold">Update 9Router V3{latestVersion ? ` to v${latestVersion}` : ""}</h2>
           <p className="text-xs text-white/60">
             {isDisconnected
               ? "Server stopped. Paste the command into a terminal to install."

@@ -1,8 +1,8 @@
 {
-  "name": "9router-v2",
+  "name": "9router-v3",
   "private": true,
-  "version": "0.5.0",
-  "description": "9Router v2 — Monorepo (frontend + backend)",
+  "version": "3.0.0",
+  "description": "9Router V3 by codestorm — Railway-ready AI gateway monorepo",
   "workspaces": [
     "frontend",
     "backend",

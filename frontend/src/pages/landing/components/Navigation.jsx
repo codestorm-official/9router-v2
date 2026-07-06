@@ -15,8 +15,8 @@ export default function Navigation() {
           onClick={() => navigate("/")}
           aria-label="Navigate to home"
         >
-          <img src="/logo_v2.png" alt="9Router v2" className="size-8 rounded object-cover" />
-          <h2 className="text-white text-xl font-bold tracking-tight">9Router</h2>
+          <img src="/branding/9router-v3-logo.png" alt="9Router V3" className="size-8 object-contain" />
+          <h2 className="text-white text-xl font-bold tracking-tight">9Router V3</h2>
         </button>
 
         {/* Desktop menu */}
@@ -66,4 +66,3 @@ export default function Navigation() {
     </nav>
   );
 }
-

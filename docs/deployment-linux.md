@@ -1,6 +1,6 @@
 # Deployment Guide — Linux / Armbian Server
 
-Panduan lengkap deploy **9Router v2** ke server Linux (Armbian, Debian, Ubuntu).  
+Panduan lengkap deploy **9Router V3** ke server Linux (Armbian, Debian, Ubuntu).
 Mencakup systemd service, Nginx reverse proxy, Cloudflare Tunnel, dan Python automation.
 
 ---
@@ -39,7 +39,7 @@ Disarankan install di **disk HDD/SSD terpisah** (misal `/mnt/hdd`) agar tidak me
 
 ```
 /mnt/hdd/
-├── 9router-v2/              ← root project
+├── 9router-v3/              ← root project
 │   ├── backend/
 │   │   ├── dist/            ← compiled JS (output tsc)
 │   │   ├── open-sse/        ← JS handlers (path alias via symlink)
@@ -50,12 +50,12 @@ Disarankan install di **disk HDD/SSD terpisah** (misal `/mnt/hdd`) agar tidak me
 │       ├── open-sse -> ../backend/open-sse
 │       └── @/
 │           └── lib -> ../../backend/dist/lib
-└── .9router-v2/             ← data directory (DB, backups)
+└── .9router-v3/             ← data directory (DB, backups)
     └── db/
         └── data.sqlite
 ```
 
-> **Penting**: `/root/.9router-v2` → symlink ke `/mnt/hdd/.9router-v2`
+> **Penting**: `/root/.9router-v3` → symlink ke `/mnt/hdd/.9router-v3`
 
 ---
 
@@ -65,8 +65,8 @@ Disarankan install di **disk HDD/SSD terpisah** (misal `/mnt/hdd`) agar tidak me
 
 ```bash
 cd /mnt/hdd
-git clone <REPO_URL> 9router-v2
-cd 9router-v2
+git clone <REPO_URL> 9router-v3
+cd 9router-v3
 ```
 
 ### Install npm dependencies
@@ -128,13 +128,13 @@ Backend menggunakan Python untuk automation (signup akun, scraping token, dll).
 ### Buat venv di HDD
 
 ```bash
-python3 -m venv /mnt/hdd/9router-v2/backend/.venv
+python3 -m venv /mnt/hdd/9router-v3/backend/.venv
 ```
 
 ### Install camoufox + GeoIP
 
 ```bash
-/mnt/hdd/9router-v2/backend/.venv/bin/pip install 'camoufox[geoip]'
+/mnt/hdd/9router-v3/backend/.venv/bin/pip install 'camoufox[geoip]'
 ```
 
 Paket yang ter-install:
@@ -146,17 +146,17 @@ Paket yang ter-install:
 ### Fetch camoufox browser binary (opsional, untuk automation signup)
 
 ```bash
-/mnt/hdd/9router-v2/backend/.venv/bin/python3 -m camoufox fetch
+/mnt/hdd/9router-v3/backend/.venv/bin/python3 -m camoufox fetch
 ```
 
 ### Verifikasi
 
 ```bash
-/mnt/hdd/9router-v2/backend/.venv/bin/python3 -c 'import camoufox; print("camoufox OK")'
+/mnt/hdd/9router-v3/backend/.venv/bin/python3 -c 'import camoufox; print("camoufox OK")'
 ```
 
 > **Catatan**: Backend mencari venv di `<WorkingDirectory>/.venv/bin/python`.  
-> Pastikan `WorkingDirectory` di systemd service = `/mnt/hdd/9router-v2/backend`.
+> Pastikan `WorkingDirectory` di systemd service = `/mnt/hdd/9router-v3/backend`.
 
 ---
 
@@ -165,14 +165,14 @@ Paket yang ter-install:
 ### Buat file service
 
 ```bash
-cat > /etc/systemd/system/9router-v2.service << 'EOF'
+cat > /etc/systemd/system/9router-v3.service << 'EOF'
 [Unit]
-Description=9Router v2 Backend
+Description=9Router V3 Backend
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/mnt/hdd/9router-v2/backend
+WorkingDirectory=/mnt/hdd/9router-v3/backend
 ExecStart=/usr/bin/node dist/server.js
 Restart=always
 RestartSec=5
@@ -191,15 +191,15 @@ EOF
 
 ```bash
 systemctl daemon-reload
-systemctl enable 9router-v2
-systemctl start 9router-v2
-systemctl status 9router-v2
+systemctl enable 9router-v3
+systemctl start 9router-v3
+systemctl status 9router-v3
 ```
 
 ### Cek logs
 
 ```bash
-journalctl -u 9router-v2 -f
+journalctl -u 9router-v3 -f
 ```
 
 ---
@@ -215,7 +215,7 @@ server {
     server_name api.yourdomain.com;
 
     # Frontend statis
-    root /mnt/hdd/9router-v2/frontend/dist;
+    root /mnt/hdd/9router-v3/frontend/dist;
     index index.html;
 
     # Semua request ke /api, /v1, /v1beta -> backend
@@ -295,36 +295,36 @@ Database SQLite disimpan di data directory terpisah dari code agar tidak terhapu
 ### Lokasi default
 
 ```
-/root/.9router-v2/db/data.sqlite
+/root/.9router-v3/db/data.sqlite
 ```
 
 ### Pindah ke HDD (disarankan untuk server dengan system storage terbatas)
 
 ```bash
 # Stop backend dulu
-systemctl stop 9router-v2
+systemctl stop 9router-v3
 
 # Copy ke HDD
-mkdir -p /mnt/hdd/.9router-v2
-cp -a /root/.9router-v2/. /mnt/hdd/.9router-v2/
+mkdir -p /mnt/hdd/.9router-v3
+cp -a /root/.9router-v3/. /mnt/hdd/.9router-v3/
 
 # Hapus original, buat symlink
-rm -rf /root/.9router-v2
-ln -sf /mnt/hdd/.9router-v2 /root/.9router-v2
+rm -rf /root/.9router-v3
+ln -sf /mnt/hdd/.9router-v3 /root/.9router-v3
 
 # Start kembali
-systemctl start 9router-v2
+systemctl start 9router-v3
 ```
 
 ### Migrasi DB dari mesin lain
 
 ```bash
 # Di mesin sumber (lokal)
-scp ~/.9router-v2/db/data.sqlite \
-    root@<SERVER_IP>:/root/.9router-v2/db/data.sqlite
+scp ~/.9router-v3/db/data.sqlite \
+    root@<SERVER_IP>:/root/.9router-v3/db/data.sqlite
 
 # Di server — restart agar DB ter-load
-systemctl restart 9router-v2
+systemctl restart 9router-v3
 ```
 
 ---
@@ -334,7 +334,7 @@ systemctl restart 9router-v2
 ### Update code dari git
 
 ```bash
-cd /mnt/hdd/9router-v2
+cd /mnt/hdd/9router-v3
 git pull
 ```
 
@@ -343,13 +343,13 @@ git pull
 ```bash
 cd backend
 npm run build
-systemctl restart 9router-v2
+systemctl restart 9router-v3
 ```
 
 ### Rebuild frontend
 
 ```bash
-cd /mnt/hdd/9router-v2/frontend
+cd /mnt/hdd/9router-v3/frontend
 npm run build
 ```
 
@@ -360,13 +360,13 @@ cd frontend && npm run build
 
 # Sync ke server
 rsync -az --delete dist/ \
-    root@<SERVER_IP>:/mnt/hdd/9router-v2/frontend/dist/
+    root@<SERVER_IP>:/mnt/hdd/9router-v3/frontend/dist/
 ```
 
 ### Re-create symlinks (setelah fresh clone atau update node_modules)
 
 ```bash
-cd /mnt/hdd/9router-v2
+cd /mnt/hdd/9router-v3
 
 # open-sse symlink
 mkdir -p node_modules
@@ -384,22 +384,22 @@ ln -sf ../../backend/dist/lib node_modules/@/lib
 ### Backend tidak jalan
 
 ```bash
-journalctl -u 9router-v2 --lines 50
+journalctl -u 9router-v3 --lines 50
 ```
 
 **`ERR_MODULE_NOT_FOUND: Cannot find package 'open-sse'`**
 
 ```bash
-ln -sf ../backend/open-sse /mnt/hdd/9router-v2/node_modules/open-sse
-systemctl restart 9router-v2
+ln -sf ../backend/open-sse /mnt/hdd/9router-v3/node_modules/open-sse
+systemctl restart 9router-v3
 ```
 
 **`ERR_MODULE_NOT_FOUND: Cannot find package '@/lib'`**
 
 ```bash
-mkdir -p /mnt/hdd/9router-v2/node_modules/@
-ln -sf ../../backend/dist/lib /mnt/hdd/9router-v2/node_modules/@/lib
-systemctl restart 9router-v2
+mkdir -p /mnt/hdd/9router-v3/node_modules/@
+ln -sf ../../backend/dist/lib /mnt/hdd/9router-v3/node_modules/@/lib
+systemctl restart 9router-v3
 ```
 
 **Port konflik**
@@ -407,8 +407,8 @@ systemctl restart 9router-v2
 ```bash
 ss -tlnp | grep :3011
 # Ganti PORT di service file
-nano /etc/systemd/system/9router-v2.service
-systemctl daemon-reload && systemctl restart 9router-v2
+nano /etc/systemd/system/9router-v3.service
+systemctl daemon-reload && systemctl restart 9router-v3
 ```
 
 ---
@@ -417,12 +417,12 @@ systemctl daemon-reload && systemctl restart 9router-v2
 
 1. Cek symlinks ada:
    ```bash
-   ls -la /mnt/hdd/9router-v2/node_modules/open-sse
-   ls -la /mnt/hdd/9router-v2/node_modules/@/lib
+   ls -la /mnt/hdd/9router-v3/node_modules/open-sse
+   ls -la /mnt/hdd/9router-v3/node_modules/@/lib
    ```
 2. Cek route mount log:
    ```bash
-   journalctl -u 9router-v2 | grep 'Failed to import\|Mounted'
+   journalctl -u 9router-v3 | grep 'Failed to import\|Mounted'
    ```
 
 ---
@@ -443,13 +443,13 @@ cat /etc/cloudflared/config.yml | grep -A2 'api\.'
 
 ```bash
 # Install di venv yang benar
-/mnt/hdd/9router-v2/backend/.venv/bin/pip install 'camoufox[geoip]'
+/mnt/hdd/9router-v3/backend/.venv/bin/pip install 'camoufox[geoip]'
 
 # Verifikasi
-/mnt/hdd/9router-v2/backend/.venv/bin/python3 -c 'import camoufox; print("OK")'
+/mnt/hdd/9router-v3/backend/.venv/bin/python3 -c 'import camoufox; print("OK")'
 ```
 
-Pastikan `WorkingDirectory` di systemd = `/mnt/hdd/9router-v2/backend`  
+Pastikan `WorkingDirectory` di systemd = `/mnt/hdd/9router-v3/backend`
 karena backend spawn Python via: `path.resolve(process.cwd(), ".venv/bin/python")`
 
 ---
@@ -458,14 +458,14 @@ karena backend spawn Python via: `path.resolve(process.cwd(), ".venv/bin/python"
 
 ```bash
 # Cek file DB ada
-ls -lh /root/.9router-v2/db/data.sqlite
+ls -lh /root/.9router-v3/db/data.sqlite
 
 # Cek isi DB
-sqlite3 /root/.9router-v2/db/data.sqlite \
+sqlite3 /root/.9router-v3/db/data.sqlite \
   "SELECT provider, COUNT(*) FROM providerConnections GROUP BY provider;"
 
 # Restart agar DB ter-load ulang
-systemctl restart 9router-v2
+systemctl restart 9router-v3
 ```
 
 ---
@@ -474,13 +474,13 @@ systemctl restart 9router-v2
 
 ```bash
 # Status semua service
-systemctl status 9router-v2 cloudflared nginx
+systemctl status 9router-v3 cloudflared nginx
 
 # Restart semua
-systemctl restart 9router-v2 && nginx -s reload
+systemctl restart 9router-v3 && nginx -s reload
 
 # Tail logs backend
-journalctl -u 9router-v2 -f
+journalctl -u 9router-v3 -f
 
 # Test endpoint lokal
 curl http://127.0.0.1:3011/v1/models | python3 -m json.tool
@@ -490,5 +490,5 @@ curl https://api.yourdomain.com/v1/models | python3 -m json.tool
 
 # Disk usage
 df -h / /mnt/hdd
-du -sh /mnt/hdd/9router-v2/
+du -sh /mnt/hdd/9router-v3/
 ```

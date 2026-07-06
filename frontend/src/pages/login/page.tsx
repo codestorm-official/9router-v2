@@ -118,7 +118,7 @@ export default function LoginPage() {
     <SignInPage
       title={
         <span className="font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          9Router <span className="font-light text-zinc-400">v2</span>
+          9Router <span className="font-light text-zinc-400">V3</span>
         </span>
       }
       description={

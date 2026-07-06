@@ -91,7 +91,7 @@ const TestimonialCard = ({ testimonial, delay }: { testimonial: Testimonial, del
 // --- MAIN COMPONENT ---
 
 export const SignInPage: React.FC<SignInPageProps> = ({
-  title = <span className="font-light text-zinc-900 dark:text-zinc-100 tracking-tighter">Welcome to 9Router</span>,
+  title = <span className="font-light text-zinc-900 dark:text-zinc-100 tracking-tighter">Welcome to 9Router V3</span>,
   description = "Enter your credentials to access the dashboard",
   heroImageSrc,
   testimonials = [],
@@ -217,16 +217,21 @@ export const SignInPage: React.FC<SignInPageProps> = ({
         </div>
       </section>
 
-      {/* Right column: PayPal donation QR only */}
+      {/* Right column: subtle PayPal donation showcase */}
       {donateUrl && donateQrSrc && (
-        <section className="hidden md:flex flex-1 items-center justify-center bg-zinc-50 dark:bg-zinc-900">
-          <a href={donateUrl} target="_blank" rel="noopener noreferrer" aria-label="Donate via PayPal">
-            <img
-              src={donateQrSrc}
-              alt="PayPal donation QR code"
-              className="w-[min(52vw,28rem)] aspect-square"
-            />
-          </a>
+        <section className="hidden md:flex flex-1 items-center justify-center relative overflow-hidden bg-zinc-50 dark:bg-zinc-900">
+          <div className="absolute size-80 rounded-full bg-orange-400/10 dark:bg-orange-400/5 blur-3xl" />
+          <div className="relative rounded-[2rem] border border-zinc-200/80 dark:border-white/10 bg-white/70 dark:bg-zinc-950/50 p-5 shadow-2xl shadow-zinc-300/30 dark:shadow-black/30 backdrop-blur-xl">
+            <div className="rounded-[1.35rem] border border-zinc-200 dark:border-zinc-800 bg-white p-4">
+              <a href={donateUrl} target="_blank" rel="noopener noreferrer" aria-label="Donate via PayPal">
+                <img
+                  src={donateQrSrc}
+                  alt="PayPal donation QR code"
+                  className="size-64 xl:size-72"
+                />
+              </a>
+            </div>
+          </div>
         </section>
       )}
     </div>

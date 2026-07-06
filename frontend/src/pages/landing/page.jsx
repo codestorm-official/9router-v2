@@ -52,7 +52,7 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto text-center relative z-10">
             <h2 className="text-4xl md:text-5xl font-black mb-6">Ready to Simplify Your AI Infrastructure?</h2>
             <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
-              Join developers who are streamlining their AI integrations with 9Router. Open source and free to start.
+              Join developers who are streamlining their AI integrations with 9Router V3. Open source and free to start.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button 
@@ -78,4 +78,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
