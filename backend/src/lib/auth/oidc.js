@@ -23,6 +23,9 @@ export function getPublicOrigin(request) {
   const configuredBaseUrl =
     process.env.BASE_URL ||
     process.env.NEXT_PUBLIC_BASE_URL ||
+    (process.env.RAILWAY_PUBLIC_DOMAIN
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      : "") ||
     "";
 
   if (configuredBaseUrl) {
