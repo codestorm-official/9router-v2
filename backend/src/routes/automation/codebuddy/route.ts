@@ -118,7 +118,7 @@ export async function GET(req, res) {
     // Heal dangling running state for jobs & accounts when no job is active in memory
     if (!activeJobId) {
       try {
-        db.run("UPDATE codebuddyAccounts SET apiKeyStatus = 'failed', lastError = 'Job terhenti atau di-stop.' WHERE apiKeyStatus = 'running'");
+        db.run("UPDATE codebuddyAccounts SET apiKeyStatus = 'failed', lastError = 'Job stopped or was interrupted.' WHERE apiKeyStatus = 'running'");
         const lastJob = db.get("SELECT * FROM codebuddyJobs ORDER BY createdAt DESC LIMIT 1");
         if (lastJob) {
           let results = [];
@@ -129,7 +129,7 @@ export async function GET(req, res) {
           for (const r of results) {
             if (r && r.status === "running") {
               r.status = "failed";
-              r.error = "Dihentikan oleh pengguna atau server restart.";
+              r.error = "Stopped by the user or a server restart.";
               r.ok = false;
               modified = true;
             }
@@ -250,7 +250,7 @@ export async function POST_handler(req, res) {
 
       const client = await getAmmailClientFromSettings();
       if (!client.configured) {
-        return res.status(400).json({ error: "Ammail belum dikonfigurasi di Settings." });
+        return res.status(400).json({ error: "Ammail is not configured in Settings." });
       }
 
       const createdAccounts = [];
@@ -277,7 +277,7 @@ export async function POST_handler(req, res) {
             }
           }
           if (!res || !res.inbox || !res.inbox.address) {
-            throw lastErr || new Error("Gagal membuat inbox dari Ammail");
+            throw lastErr || new Error("Failed to create an Ammail inbox");
           }
 
           const email = res.inbox.address;
@@ -320,7 +320,7 @@ export async function POST_handler(req, res) {
       console.log(`[ADD-GOOGLE] Adding accounts for target provider: "${targetProvider}"`);
       const raw = (accounts_text || "").trim();
       if (!raw) {
-        return res.status(400).json({ error: "Input kosong." });
+        return res.status(400).json({ error: "Input is empty." });
       }
 
       const existingAccounts = await listCodeBuddyAccounts();
@@ -410,11 +410,11 @@ export async function POST_handler(req, res) {
         .map(a => a.id);
 
       if (targetIds.length === 0) {
-        return res.status(400).json({ error: "Tidak ada akun pending/failed." });
+        return res.status(400).json({ error: "No pending or failed accounts found." });
       }
 
       if (global._codebuddyState.activeJobId) {
-        return res.status(400).json({ error: "Ada job lain yang sedang berjalan." });
+        return res.status(400).json({ error: "Another job is already running." });
       }
 
       const jobId = uuidv4();
@@ -428,7 +428,7 @@ export async function POST_handler(req, res) {
     if (action === "stop") {
       const busy = global._codebuddyState.activeJobId;
       if (!busy) {
-        return res.json({ ok: true, message: "Tidak ada job aktif." });
+        return res.json({ ok: true, message: "No active jobs found." });
       }
 
       global._codebuddyState.stopFlag = true;
@@ -448,7 +448,7 @@ export async function POST_handler(req, res) {
       return res.json({
         ok: true,
         active_job_id: busy,
-        message: "Stop signal terkirim. Akun yang sedang berjalan akan dihentikan.",
+        message: "Stop signal sent. The active account will be stopped.",
       });
     }
 
@@ -516,7 +516,7 @@ export async function POST_handler(req, res) {
         return matchesStatus && matchesProvider;
       });
       if (ready.length === 0) {
-        return res.json({ ok: true, total: 0, success: 0, failed: 0, message: "Tidak ada akun ready." });
+        return res.json({ ok: true, total: 0, success: 0, failed: 0, message: "No ready accounts found." });
       }
 
       let success = 0;
@@ -568,7 +568,7 @@ export async function POST_handler(req, res) {
         success,
         failed,
         errors,
-        message: `✓ ${success}/${ready.length} akun berhasil ditambahkan ke 9router.`
+        message: `✓ ${success}/${ready.length} accounts were added to 9Router.`
       });
     }
 
@@ -618,7 +618,7 @@ async function runCodeBuddySignupJob(jobId, accountIds, concurrencyLimit) {
         await markCodeBuddyRunning(accountId);
         await updateCodeBuddyJobResult(jobId, currentIdx, {
           status: "running",
-          step: "Memulai otomatisasi browser..."
+          step: "Starting browser automation..."
         });
 
         try {
@@ -662,7 +662,7 @@ function executeCodeBuddySignup(accountId, jobId, idx, settings) {
       const isQoder = account.provider === "qoder";
       const isCloudflare = account.provider === "cloudflare";
       if (isLeonardo && !settings.leonardo_invite_link) {
-        return reject(new Error("Leonardo invite link belum di-set di Settings."));
+        return reject(new Error("The Leonardo invite link is not configured in Settings."));
       }
 
       const venvPython = path.resolve(process.cwd(), ".venv/bin/python");
@@ -813,7 +813,7 @@ function executeCodeBuddySignup(accountId, jobId, idx, settings) {
               await updateCodeBuddyJobResult(jobId, idx, {
                 email: account.email,
                 status: "running",
-                step: "Canva Enrolled. Menghubungkan ke Leonardo AI..."
+                step: "Canva enrolled. Connecting to Leonardo AI..."
               });
             } else if (parsed.status === "success") {
               done = true;
@@ -916,8 +916,8 @@ function executeCodeBuddySignup(accountId, jobId, idx, settings) {
         }
         if (!done) {
           let errMsg = global._codebuddyState.stopFlag 
-            ? "Dihentikan oleh pengguna." 
-            : `Proses terhenti dengan exit code ${code}.`;
+            ? "Stopped by the user."
+            : `Process stopped with exit code ${code}.`;
           if (stderrAccumulator.trim()) {
             errMsg += ` | Stderr: ${stderrAccumulator.trim()}`;
           }
@@ -938,7 +938,7 @@ function executeCodeBuddySignup(accountId, jobId, idx, settings) {
         }
         if (!done) {
           const errMsg = global._codebuddyState.stopFlag 
-            ? "Dihentikan oleh pengguna." 
+            ? "Stopped by the user."
             : (err.message || String(err));
           await markCodeBuddyError(account.id, errMsg);
           await updateCodeBuddyJobResult(jobId, idx, {

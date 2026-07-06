@@ -485,8 +485,8 @@ function CodeBuddyTab() {
   };
 
   const handleSingleDelete = async (id) => {
-    if (!confirm("Hapus akun ini?")) return;
-    const deleteFrom9router = confirm("Apakah ingin menghapus juga koneksi akun ini di 9router?");
+    if (!confirm("Delete this account?")) return;
+    const deleteFrom9router = confirm("Also delete this account connection from 9Router?");
     const deletedAcc = accounts.find(a => a.id === id);
     try {
       await fetch(`/api/automation/codebuddy/${id}`, {
@@ -507,7 +507,7 @@ function CodeBuddyTab() {
   const handleBulkDelete = async (statuses, ids = null) => {
     const label = ids ? `${ids.length} selected accounts` : `all accounts with status: ${statuses.join(", ")}`;
     if (!confirm(`Delete ${label}?`)) return;
-    const deleteFrom9router = confirm("Apakah ingin menghapus juga koneksi akun-akun tersebut di 9router?");
+    const deleteFrom9router = confirm("Also delete these account connections from 9Router?");
     const deletedEmailsList = accounts
       .filter(a => ids ? ids.includes(a.id) : (a.provider === targetProvider && statuses.includes(a.api_key_status)))
       .map(a => a.email.toLowerCase());
@@ -670,14 +670,14 @@ function CodeBuddyTab() {
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex flex-col">
                       <span className="text-xs font-medium text-text-main">Headless Browser</span>
-                      <span className="text-[10px] text-text-muted">Jalankan di latar belakang tanpa membuka jendela baru</span>
+                      <span className="text-[10px] text-text-muted">Run in the background without opening a new window</span>
                     </div>
                     <Toggle checked={browserHeadless} onChange={setBrowserHeadless} />
                   </div>
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex flex-col">
                       <span className="text-xs font-medium text-text-main">Tampilkan Preview Panel</span>
-                      <span className="text-[10px] text-text-muted">Aktifkan live stream visual di bawah</span>
+                      <span className="text-[10px] text-text-muted">Enable the visual live stream below</span>
                     </div>
                     <Toggle checked={debugMode} onChange={setDebugMode} />
                   </div>
@@ -890,7 +890,7 @@ function CodeBuddyTab() {
                                 if (acc) {
                                   handleSingleRun(acc.id);
                                 } else {
-                                  alert("Account tidak ditemukan.");
+                                  alert("Account not found.");
                                 }
                               }}
                               disabled={!!activeJobId}
@@ -1460,10 +1460,10 @@ function AmmailTab() {
       });
       const data = await res.json();
       if (res.ok) {
-        setTestResult({ ok: true, message: "Koneksi ke worker berhasil!" });
+        setTestResult({ ok: true, message: "Worker connection succeeded!" });
         loadState();
       } else {
-        setTestResult({ ok: false, message: `Koneksi gagal: ${data.error}` });
+        setTestResult({ ok: false, message: `Connection failed: ${data.error}` });
       }
     } catch (e) {
       setTestResult({ ok: false, message: `Error: ${e.message}` });
@@ -1474,7 +1474,7 @@ function AmmailTab() {
 
   const handleAutoDeploy = async () => {
     if (!cfAccountId || !cfApiToken || !cfDomain) {
-      alert("Account ID, API Token, dan Domain wajib diisi!");
+      alert("Account ID, API Token, and Domain are required!");
       return;
     }
     setLoading(true);
@@ -1493,7 +1493,7 @@ function AmmailTab() {
       });
       const data = await res.json();
       if (res.ok) {
-        setTestResult({ ok: true, message: "Sukses! Worker telah di-deploy ke Cloudflare dan siap digunakan." });
+        setTestResult({ ok: true, message: "Success! The Worker has been deployed to Cloudflare and is ready." });
         setBaseUrl(data.base_url || "");
         setApiKey(data.api_key || "");
         setDefaultDomain(data.default_domain || "");
@@ -1501,7 +1501,7 @@ function AmmailTab() {
         setCfWorkersDevUrl(data.cf_workers_dev_url || "");
         loadState();
       } else {
-        setTestResult({ ok: false, message: `Deploy gagal: ${data.error}` });
+        setTestResult({ ok: false, message: `Deployment failed: ${data.error}` });
       }
     } catch (e) {
       setTestResult({ ok: false, message: `Error: ${e.message}` });
@@ -1558,7 +1558,7 @@ function AmmailTab() {
   };
 
   const handleDeleteInbox = async (alias) => {
-    if (!confirm(`Hapus inbox ${alias}?`)) return;
+    if (!confirm(`Delete inbox ${alias}?`)) return;
     try {
       const res = await fetch("/api/automation/ammail", {
         method: "POST",
@@ -1695,7 +1695,7 @@ function AmmailTab() {
     <div className="border border-border-subtle rounded-2xl overflow-hidden bg-vibrancy backdrop-blur-xl flex flex-col h-[calc(100vh-210px)] min-h-[500px] shadow-[var(--shadow-warm)]">
       {initialLoading ? (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3">
-          <Loading size="lg" label="Memuat setelan Temp Mail..." />
+          <Loading size="lg" label="Loading Temporary Mail settings..." />
         </div>
       ) : !configured ? (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
@@ -1737,7 +1737,7 @@ function AmmailTab() {
               <div className="px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-[10px] text-red-400 break-all space-y-1">
                 <div className="font-semibold flex items-center gap-1">
                   <span className="material-symbols-outlined text-[12px]">error</span>
-                  Koneksi Gagal:
+                  Connection Failed:
                 </div>
                 <div className="opacity-80">{connectionError}</div>
                 {cfWorkersDevUrl && baseUrl !== cfWorkersDevUrl && (
@@ -1749,7 +1749,7 @@ function AmmailTab() {
                     }}
                     className="text-primary hover:underline text-[9px] font-semibold block mt-1 text-left"
                   >
-                    💡 Gunakan domain workers.dev fallback
+                    💡 Use the workers.dev fallback domain
                   </button>
                 )}
               </div>
@@ -2239,14 +2239,14 @@ function AmmailTab() {
                       />
                       {cfWorkersDevUrl && baseUrl !== cfWorkersDevUrl && (
                         <div className="mt-1.5 p-2 bg-primary/10 border border-primary/20 rounded-lg text-[10px] text-primary space-y-1 text-left">
-                          <div>💡 Coba gunakan URL workers.dev fallback:</div>
+                          <div>💡 Try the workers.dev fallback URL:</div>
                           <div className="font-mono text-[9px] break-all bg-black/40 p-1 rounded select-all">{cfWorkersDevUrl}</div>
                           <button
                             type="button"
                             onClick={() => setBaseUrl(cfWorkersDevUrl)}
                             className="underline hover:no-underline font-semibold block"
                           >
-                            Klik untuk gunakan URL ini
+                            Click to use this URL
                           </button>
                         </div>
                       )}
@@ -2327,7 +2327,7 @@ function AmmailTab() {
                       </div>
                       <input
                         type="text"
-                        placeholder="Paste Account ID Anda"
+                        placeholder="Paste your Account ID"
                         value={cfAccountId}
                         onChange={(e) => setCfAccountId(e.target.value)}
                         className="w-full text-xs p-2.5 rounded-lg border border-white/10 bg-white/5 focus:outline-none focus:border-primary text-white"
@@ -2343,12 +2343,12 @@ function AmmailTab() {
                           rel="noopener noreferrer"
                           className="text-[10px] text-primary hover:underline cursor-pointer flex items-center gap-0.5"
                         >
-                          Buat disini <span className="material-symbols-outlined text-[10px]">open_in_new</span>
+                          Create one here <span className="material-symbols-outlined text-[10px]">open_in_new</span>
                         </a>
                       </div>
                       <input
                         type="password"
-                        placeholder="Paste API Token Anda"
+                        placeholder="Paste your API Token"
                         value={cfApiToken}
                         onChange={(e) => setCfApiToken(e.target.value)}
                         className="w-full text-xs p-2.5 rounded-lg border border-white/10 bg-white/5 focus:outline-none focus:border-primary text-white"
@@ -2356,7 +2356,7 @@ function AmmailTab() {
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-white/60 block mb-1">Domain Worker (misal: mail.domainanda.com)</label>
+                      <label className="text-[11px] text-white/60 block mb-1">Domain Worker (for example: mail.domainanda.com)</label>
                       <input
                         type="text"
                         placeholder="mail.domainanda.com"
@@ -2375,12 +2375,12 @@ function AmmailTab() {
                           rel="noopener noreferrer"
                           className="text-[10px] text-primary hover:underline cursor-pointer flex items-center gap-0.5"
                         >
-                          Dapatkan di @BotFather <span className="material-symbols-outlined text-[10px]">open_in_new</span>
+                          Get one from @BotFather <span className="material-symbols-outlined text-[10px]">open_in_new</span>
                         </a>
                       </div>
                       <input
                         type="password"
-                        placeholder="Token Bot dari @BotFather"
+                        placeholder="Bot token from @BotFather"
                         value={telegramBotToken}
                         onChange={(e) => setTelegramBotToken(e.target.value)}
                         className="w-full text-xs p-2.5 rounded-lg border border-white/10 bg-white/5 focus:outline-none focus:border-primary text-white"
@@ -2403,7 +2403,7 @@ function AmmailTab() {
                         <span className="font-semibold text-primary block">Workers.dev fallback URL:</span>
                         <span className="font-mono text-[9px] break-all block bg-black/40 p-1 rounded select-all">{cfWorkersDevUrl}</span>
                         <span className="block leading-relaxed">
-                          Jika custom domain Anda terputus (misal karena DNS belum merambat), Anda dapat menggunakan URL fallback ini di tab Manual Input.
+                          If your custom domain is unavailable (for example, while DNS is propagating), use this fallback URL in the Manual Input tab.
                         </span>
                       </div>
                     )}
@@ -2427,7 +2427,7 @@ function AmmailTab() {
                   rel="noopener noreferrer"
                   className="w-full py-2 rounded-lg bg-neutral-900 border border-primary/20 hover:border-primary/50 text-primary text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  📖 Buka Panduan Lengkap Deploy
+                  📖 Open the Complete Deployment Guide
                 </a>
 
                 <details className="group bg-white/5 border border-white/10 rounded-xl overflow-hidden">
@@ -2442,23 +2442,23 @@ function AmmailTab() {
                   </summary>
                   <div className="p-3 pt-0 border-t border-white/5 text-[11px] text-white/70 space-y-2 leading-relaxed max-h-40 overflow-y-auto custom-scrollbar">
                     <p className="mt-2">
-                      Ammail adalah sistem email sementara berbasis <strong>Cloudflare Worker</strong>. Ikuti langkah berikut untuk mengaturnya:
+                      Ammail is a temporary email system based on <strong>Cloudflare Worker</strong>. Follow these setup steps:
                     </p>
                     <ol className="list-decimal list-inside space-y-1.5 text-white/60">
                       <li>
-                        <strong className="text-white/80">Deploy Worker:</strong> Deploy kode worker Ammail di akun Cloudflare Anda.
+                        <strong className="text-white/80">Deploy Worker:</strong> Deploy the Ammail worker code to your Cloudflare account.
                       </li>
                       <li>
-                        <strong className="text-white/80">Set API Key:</strong> Pada dashboard Worker Anda, tambahkan Environment Variable <code className="bg-white/10 px-1 py-0.5 rounded font-mono text-amber-300">API_KEY</code> dengan nilai token rahasia Anda.
+                        <strong className="text-white/80">Set API Key:</strong> From the Worker dashboard, add Environment Variable <code className="bg-white/10 px-1 py-0.5 rounded font-mono text-amber-300">API_KEY</code> with your secret token value.
                       </li>
                       <li>
-                        <strong className="text-white/80">Email Routing:</strong> Aktifkan Cloudflare Email Routing pada domain Anda, lalu arahkan semua email masuk ke worker tersebut.
+                        <strong className="text-white/80">Email Routing:</strong> Enable Cloudflare Email Routing for your domain and route all incoming email to the Worker.
                       </li>
                       <li>
-                        <strong className="text-white/80">Hubungkan:</strong> Masukkan <strong className="text-white">Base URL Worker</strong> (misal: <code className="text-amber-200">https://mail.domain.com</code>) dan <strong className="text-white">API Key</strong> ke form di atas, lalu tekan <strong className="text-white">Test Connection</strong>.
+                        <strong className="text-white/80">Connect:</strong> Enter the <strong className="text-white">Worker Base URL</strong> (for example: <code className="text-amber-200">https://mail.domain.com</code>) and <strong className="text-white">API Key</strong> in the form above, then click <strong className="text-white">Test Connection</strong>.
                       </li>
                       <li>
-                        <strong className="text-white/80">Aktifkan Webhook:</strong> Setelah koneksi berhasil dan pengaturan disimpan, klik tombol <strong className="text-white">Register Webhook</strong> di bawah untuk mengaktifkan sinkronisasi email secara real-time.
+                        <strong className="text-white/80">Enable Webhook:</strong> After the connection succeeds and settings are saved, click <strong className="text-white">Register Webhook</strong> below to enable real-time email synchronization.
                       </li>
                     </ol>
                   </div>
@@ -2488,7 +2488,7 @@ function AmmailTab() {
             <div className="flex justify-between items-center p-5 border-b border-white/5 shrink-0 bg-neutral-900">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-[22px]">auto_stories</span>
-                <h3 className="text-base font-bold">Panduan Lengkap Deploy Temp Mail</h3>
+                <h3 className="text-base font-bold">Complete Temporary Mail Deployment Guide</h3>
               </div>
               <button onClick={() => setShowTutorialModal(false)} className="text-white/60 hover:text-white cursor-pointer flex items-center">
                 <span className="material-symbols-outlined text-[20px]">close</span>
@@ -2502,7 +2502,7 @@ function AmmailTab() {
                   Prasyarat & Login Cloudflare
                 </h4>
                 <p className="mb-2">
-                  Pastikan Node.js sudah terinstal. Login ke akun Cloudflare Anda melalui terminal dengan menjalankan perintah berikut:
+                  Make sure Node.js is installed. Log in to Cloudflare from a terminal with:
                 </p>
                 <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300">
                   <span>npx wrangler login</span>
@@ -2516,7 +2516,7 @@ function AmmailTab() {
                   Install Dependencies
                 </h4>
                 <p className="mb-2">
-                  Masuk ke direktori tempmail lokal di sistem Anda dan install dependensi NPM:
+                  Open your local tempmail directory and install the NPM dependencies:
                 </p>
                 <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300">
                   <span>cd /home/data/Project/9router/tempmail && npm install</span>
@@ -2527,10 +2527,10 @@ function AmmailTab() {
               <div>
                 <h4 className="text-sm font-bold text-white flex items-center gap-2 mb-2">
                   <span className="bg-primary/20 text-primary px-2 py-0.5 rounded text-xs">3</span>
-                  Buat Database D1
+                  Create a D1 Database
                 </h4>
                 <p className="mb-2">
-                  Buat database SQL D1 baru untuk menyimpan inbox dan pesan email masuk:
+                  Create a D1 SQL database for inboxes and incoming email messages:
                 </p>
                 <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300 mb-3">
                   <span>npx wrangler d1 create tempmail</span>
@@ -2539,7 +2539,7 @@ function AmmailTab() {
                 <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-xs text-blue-300 flex items-start gap-2">
                   <span className="material-symbols-outlined text-[16px] shrink-0 mt-0.5">info</span>
                   <span>
-                    Salin <strong>database_id</strong> hasil output perintah di atas, lalu buka file <a href="file:///home/data/Project/9router/tempmail/wrangler.jsonc" className="underline font-semibold hover:text-blue-200">wrangler.jsonc</a> dan ganti nilai <code>database_id</code> di dalamnya.
+                    Copy <strong>database_id</strong> from the command output, open <a href="file:///home/data/Project/9router/tempmail/wrangler.jsonc" className="underline font-semibold hover:text-blue-200">wrangler.jsonc</a> and replace <code>database_id</code> inside it.
                   </span>
                 </div>
               </div>
@@ -2547,10 +2547,10 @@ function AmmailTab() {
               <div>
                 <h4 className="text-sm font-bold text-white flex items-center gap-2 mb-2">
                   <span className="bg-primary/20 text-primary px-2 py-0.5 rounded text-xs">4</span>
-                  Jalankan Migrasi Database
+                  Run Database Migrations
                 </h4>
                 <p className="mb-2">
-                  Inisialisasi tabel database temp mail di lokal dan jarak jauh (remote Cloudflare):
+                  Initialize the temporary-mail database tables locally and remotely on Cloudflare:
                 </p>
                 <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300">
                   <span>npm run db:migrate:local && npm run db:migrate:remote</span>
@@ -2561,10 +2561,10 @@ function AmmailTab() {
               <div>
                 <h4 className="text-sm font-bold text-white flex items-center gap-2 mb-2">
                   <span className="bg-primary/20 text-primary px-2 py-0.5 rounded text-xs">5</span>
-                  Simpan Secret Bot Telegram
+                  Save Telegram Bot Secrets
                 </h4>
                 <p className="mb-2">
-                  Set token Telegram bot Anda dan webhook secret token ke Cloudflare Workers:
+                  Set your Telegram bot token and webhook secret in Cloudflare Workers:
                 </p>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300">
@@ -2584,7 +2584,7 @@ function AmmailTab() {
                   Konfigurasi `wrangler.jsonc` & Deploy
                 </h4>
                 <p className="mb-2">
-                  Sesuaikan nilai di bagian <code>vars</code> (domain dan base URL) pada file <a href="file:///home/data/Project/9router/tempmail/wrangler.jsonc" className="underline font-semibold hover:text-white">wrangler.jsonc</a>, lalu deploy worker:
+                  Adjust the values in <code>vars</code> (domain and base URL) in <a href="file:///home/data/Project/9router/tempmail/wrangler.jsonc" className="underline font-semibold hover:text-white">wrangler.jsonc</a>, then deploy the Worker:
                 </p>
                 <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300">
                   <span>npm run deploy</span>
@@ -2598,7 +2598,7 @@ function AmmailTab() {
                   Set Webhook Telegram Bot
                 </h4>
                 <p className="mb-2">
-                  Daftarkan URL Worker Anda agar bot Telegram dapat memproses command masuk:
+                  Register the Worker URL so the Telegram bot can process incoming commands:
                 </p>
                 <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300">
                   <span className="truncate mr-2">
@@ -2614,14 +2614,14 @@ function AmmailTab() {
                   Cloudflare Email Routing
                 </h4>
                 <p>
-                  Masuk ke Cloudflare Dashboard domain Anda, klik menu <strong>Email Routing</strong>, aktifkan fitur tersebut, lalu buat rule <strong>Catch-all</strong> dengan aksi <strong>Send to a Worker</strong> mengarah ke nama Worker Anda.
+                  Open your Cloudflare domain dashboard, select <strong>Email Routing</strong>, enable it, then create a <strong>Catch-all</strong> with the action <strong>Send to a Worker</strong> targeting your Worker.
                 </p>
               </div>
             </div>
 
             <div className="p-5 border-t border-white/5 shrink-0 bg-neutral-900 flex justify-end">
               <Button variant="primary" size="sm" onClick={() => setShowTutorialModal(false)}>
-                Selesai Membaca
+                Finish Reading
               </Button>
             </div>
           </div>
@@ -2692,4 +2692,3 @@ function AmmailTab() {
     </div>
   );
 }
-

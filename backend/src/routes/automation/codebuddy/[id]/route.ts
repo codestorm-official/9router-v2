@@ -54,7 +54,7 @@ export async function POST_handler(req, res, { params }) {
     // ── Action: Run single account automation ────────────────────────
     if (action === "run") {
       if (global._codebuddyState?.activeJobId) {
-        return res.status(400).json({ error: "Ada job lain yang sedang berjalan." });
+        return res.status(400).json({ error: "Another job is already running." });
       }
 
       const jobId = uuidv4();
@@ -69,7 +69,7 @@ export async function POST_handler(req, res, { params }) {
     // ── Action: Inject API key to 9router ───────────────────────────
     if (action === "add-to-9router") {
       if (account.apiKeyStatus !== "ready" || !account.apiKey) {
-        return res.status(400).json({ error: "Akun belum ready (restricted atau gagal)." });
+        return res.status(400).json({ error: "The account is not ready (restricted or failed)." });
       }
 
       try {
@@ -104,9 +104,9 @@ export async function POST_handler(req, res, { params }) {
         }
 
         await createProviderConnection(connData);
-        return res.json({ ok: true, email: account.email, message: `✓ ${account.email} berhasil ditambahkan ke provider ${provider} di 9router.` });
+        return res.json({ ok: true, email: account.email, message: `✓ ${account.email} was added to the ${provider} provider in 9Router.` });
       } catch (e) {
-        return res.status(500).json({ error: `Gagal menambahkan ke 9router: ${e.message}` });
+        return res.status(500).json({ error: `Failed to add the account to 9Router: ${e.message}` });
       }
     }
 
@@ -146,7 +146,7 @@ async function runSingleJob(jobId, accountId) {
     await markCodeBuddyRunning(accountId);
     await updateCodeBuddyJobResult(jobId, 0, {
       status: "running",
-      step: "Memulai otomatisasi browser..."
+      step: "Starting browser automation..."
     });
 
     await executeCodeBuddySignupSingle(accountId, jobId, settings);
@@ -171,7 +171,7 @@ function executeCodeBuddySignupSingle(accountId, jobId, settings) {
       const isQoder = account.provider === "qoder";
       const isCloudflare = account.provider === "cloudflare";
       if (isLeonardo && !settings.leonardo_invite_link) {
-        return reject(new Error("Leonardo invite link belum di-set di Settings."));
+        return reject(new Error("The Leonardo invite link is not configured in Settings."));
       }
 
       const venvPython = path.resolve(process.cwd(), ".venv/bin/python");
@@ -297,7 +297,7 @@ function executeCodeBuddySignupSingle(accountId, jobId, settings) {
               await updateCodeBuddyJobResult(jobId, 0, {
                 email: account.email,
                 status: "running",
-                step: "Canva Enrolled. Menghubungkan ke Leonardo AI..."
+                step: "Canva enrolled. Connecting to Leonardo AI..."
               });
             } else if (parsed.status === "success") {
               done = true;
@@ -399,8 +399,8 @@ function executeCodeBuddySignupSingle(accountId, jobId, settings) {
         }
         if (!done) {
           const errMsg = global._codebuddyState?.stopFlag 
-            ? "Dihentikan oleh pengguna." 
-            : `Proses terhenti dengan exit code ${code}.`;
+            ? "Stopped by the user."
+            : `Process stopped with exit code ${code}.`;
           await markCodeBuddyError(account.id, errMsg);
           await updateCodeBuddyJobResult(jobId, 0, {
             email: account.email,
@@ -418,7 +418,7 @@ function executeCodeBuddySignupSingle(accountId, jobId, settings) {
         }
         if (!done) {
           const errMsg = global._codebuddyState?.stopFlag 
-            ? "Dihentikan oleh pengguna." 
+            ? "Stopped by the user."
             : (err.message || String(err));
           await markCodeBuddyError(account.id, errMsg);
           await updateCodeBuddyJobResult(jobId, 0, {

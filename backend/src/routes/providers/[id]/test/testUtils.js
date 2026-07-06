@@ -684,7 +684,7 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
       case "leonardo": {
         const { refreshLeonardoToken } = await import("open-sse/services/tokenRefresh.js");
         const cookie = connection.apiKey || connection.cookie;
-        if (!cookie) return { valid: false, error: "Cookie tidak ditemukan" };
+        if (!cookie) return { valid: false, error: "Cookie not found" };
         const result = await refreshLeonardoToken(cookie, console);
         if (result && result.accessToken) {
           return {
@@ -699,13 +699,13 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
             }
           };
         } else {
-          return { valid: false, error: "Cookie invalid atau expired" };
+          return { valid: false, error: "Cookie is invalid or expired" };
         }
       }
       case "weavy": {
         const { refreshWeavyToken } = await import("open-sse/services/tokenRefresh.js");
         const email = connection.email || connection.name;
-        if (!email) return { valid: false, error: "Email/name tidak ditemukan" };
+        if (!email) return { valid: false, error: "Email or name not found" };
         const result = await refreshWeavyToken(email, connection, console);
         if (result && result.accessToken) {
           return {
@@ -720,7 +720,7 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
             }
           };
         } else {
-          return { valid: false, error: "Gagal me-refresh token Weavy. Pastikan login via browser berjalan dengan baik." };
+          return { valid: false, error: "Failed to refresh the Weavy token. Make sure browser login works correctly." };
         }
       }
       default:

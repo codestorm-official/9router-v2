@@ -96,7 +96,7 @@ function LeonardoAdminPanel() {
       const data = await res.json();
       if (data.ok) setConfig(data.config);
     } catch (e) {
-      flash("error", "Gagal memuat config: " + e.message);
+      flash("error", "Failed to load configuration: " + e.message);
     } finally {
       setLoading(false);
     }
@@ -144,7 +144,7 @@ function LeonardoAdminPanel() {
   };
 
   const handleDeleteAllModels = async () => {
-    if (!confirm("Hapus SEMUA model dari config? Tindakan ini tidak bisa di-undo.")) return;
+    if (!confirm("Delete ALL models from the configuration? This action cannot be undone.")) return;
     setSaving(true);
     try {
       const data = await apiPost("delete-all-models");
@@ -154,7 +154,7 @@ function LeonardoAdminPanel() {
   };
 
   const handleDeleteModel = async (id) => {
-    if (!confirm(`Hapus model "${id}"?`)) return;
+    if (!confirm(`Delete model "${id}"?`)) return;
     const data = await apiPost("delete-model", { id });
     if (data.ok) { flash("success", `Model "${id}" dihapus`); await loadConfig(); }
     else flash("error", data.error);
@@ -162,13 +162,13 @@ function LeonardoAdminPanel() {
 
   const handleAddModel = async () => {
     const m = { ...newModel };
-    if (!m.id?.trim() || !m.name?.trim()) return flash("error", "Model ID dan Name wajib diisi");
+    if (!m.id?.trim() || !m.name?.trim()) return flash("error", "Model ID and Name are required");
     if (!m.id.startsWith("leo-")) m.id = `leo-${m.id}`;
     setSaving(true);
     try {
       const data = await apiPost("add-model", { model: m });
       if (data.ok) {
-        flash("success", `Model "${m.id}" berhasil ditambahkan`);
+        flash("success", `Model "${m.id}" was added successfully`);
         setNewModel(JSON.parse(JSON.stringify(DEFAULT_NEW_MODEL)));
         setCapsTouched(false);
         setShowAddForm(false);
@@ -188,7 +188,7 @@ function LeonardoAdminPanel() {
     try {
       const { failThreshold, coolingMinutes, autoDisableThreshold, imageTimeoutMs, videoTimeoutMs } = config;
       const data = await apiPost("save-settings", { failThreshold, coolingMinutes, autoDisableThreshold, imageTimeoutMs, videoTimeoutMs });
-      if (data.ok) flash("success", "Settings disimpan");
+      if (data.ok) flash("success", "Settings saved");
       else flash("error", data.error);
     } finally { setSaving(false); }
   };
@@ -196,7 +196,7 @@ function LeonardoAdminPanel() {
   // Cookie pool handlers
   const handleAddCookie = async (e) => {
     e.preventDefault();
-    if (!cookieLabel.trim() || !cookieValue.trim()) return alert("Label dan Cookie wajib diisi");
+    if (!cookieLabel.trim() || !cookieValue.trim()) return alert("Label and Cookie are required");
     setAddingCookie(true);
     try {
       const res = await fetch("/api/providers", {
@@ -205,13 +205,13 @@ function LeonardoAdminPanel() {
         body: JSON.stringify({ provider: cookieProvider, apiKey: cookieValue.trim(), name: cookieLabel.trim(), email: cookieLabel.trim(), priority: 1 }),
       });
       const data = await res.json();
-      if (res.ok) { setCookieLabel(""); setCookieValue(""); setCookieStatus("Cookie ditambahkan!"); await loadConnections(); setTimeout(() => setCookieStatus(""), 3000); }
-      else alert(data.error || "Gagal menambahkan");
+      if (res.ok) { setCookieLabel(""); setCookieValue(""); setCookieStatus("Cookie added!"); await loadConnections(); setTimeout(() => setCookieStatus(""), 3000); }
+      else alert(data.error || "Failed to add");
     } finally { setAddingCookie(false); }
   };
 
   const handleDeleteConn = async (id) => {
-    if (!confirm("Hapus connection ini?")) return;
+    if (!confirm("Delete this connection?")) return;
     await fetch(`/api/providers/${id}`, { method: "DELETE" });
     await loadConnections();
   };
@@ -225,7 +225,7 @@ function LeonardoAdminPanel() {
     setCookieStatus("Testing...");
     const res = await fetch(`/api/providers/${id}/test`, { method: "POST" });
     const data = await res.json();
-    setCookieStatus(data.valid ? "✓ Valid" : `⚠ ${data.error || "Test gagal"}`);
+    setCookieStatus(data.valid ? "✓ Valid" : `⚠ ${data.error || "Test failed"}`);
     await loadConnections();
     setTimeout(() => setCookieStatus(""), 5000);
   };
@@ -401,8 +401,8 @@ function LeonardoAdminPanel() {
             <div className="rounded-xl border border-border bg-card p-8">
               <p className="text-center text-text-muted text-sm">
                 {config?.models?.length === 0
-                  ? 'Belum ada model. Klik "Import Defaults" untuk mengisi dari providerModels.js.'
-                  : "Tidak ada model yang cocok dengan filter."}
+                  ? 'No models yet. Click "Import Defaults" to load models from providerModels.js.'
+                  : "No models match the filter."}
               </p>
             </div>
           )}
@@ -430,7 +430,7 @@ function LeonardoAdminPanel() {
                   <option value="perplexity-web">Perplexity Web</option>
                 </select>
               </div>
-              <p className="text-xs text-text-muted">{filteredConns.length} connections untuk {cookieProvider}</p>
+              <p className="text-xs text-text-muted">{filteredConns.length} connections for {cookieProvider}</p>
             </Card>
 
             <Card padding="md" className="space-y-3">
@@ -486,7 +486,7 @@ function LeonardoAdminPanel() {
                   </thead>
                   <tbody>
                     {filteredConns.length === 0 ? (
-                      <tr><td colSpan={6} className="px-3 py-8 text-center text-text-muted">Tidak ada cookie untuk provider ini</td></tr>
+                      <tr><td colSpan={6} className="px-3 py-8 text-center text-text-muted">No cookies are available for this provider</td></tr>
                     ) : filteredConns.map(conn => (
                       <tr key={conn.id} className="border-b border-border hover:bg-surface/50 transition-colors">
                         <td className="px-3 py-2.5">
@@ -528,9 +528,9 @@ function LeonardoAdminPanel() {
         <Card padding="md" className="space-y-4 max-w-xl">
           <h3 className="text-sm font-bold">Global Settings</h3>
           {[
-            { key: "failThreshold", label: "Fail Threshold", help: "Berapa kali gagal sebelum masuk cooling" },
-            { key: "coolingMinutes", label: "Cooling (menit)", help: "Durasi cooling period setelah fail threshold" },
-            { key: "autoDisableThreshold", label: "Auto-disable Threshold", help: "Total failures sebelum cookie dinonaktifkan" },
+            { key: "failThreshold", label: "Fail Threshold", help: "Number of failures before entering cooldown" },
+            { key: "coolingMinutes", label: "Cooldown (minutes)", help: "Cooldown duration after reaching the failure threshold" },
+            { key: "autoDisableThreshold", label: "Auto-disable Threshold", help: "Total failures before disabling the cookie" },
             { key: "imageTimeoutMs", label: "Image Timeout (ms)", help: "Timeout generasi image" },
             { key: "videoTimeoutMs", label: "Video Timeout (ms)", help: "Timeout generasi video" },
           ].map(({ key, label, help }) => (
@@ -630,9 +630,9 @@ function ModelForm({ model, onChange, onCapsTouched }) {
     <div className="space-y-4">
       {/* Basic info */}
       <div className="grid grid-cols-2 gap-3">
-        {field("Model ID (tanpa prefix leo-)", "id", textInput("id", "e.g. kling-3"))}
+        {field("Model ID (without the leo- prefix)", "id", textInput("id", "e.g. kling-3"))}
         {field("Display Name", "name", textInput("name", "e.g. Kling 3.0"))}
-        {field("UUID (kosong untuk native v2)", "uuid", textInput("uuid", "xxxxxxxx-xxxx-xxxx..."))}
+        {field("UUID (leave empty for native V2)", "uuid", textInput("uuid", "xxxxxxxx-xxxx-xxxx..."))}
         {field("API Model Name", "apiModelName", textInput("apiModelName", "e.g. kling-3.0"))}
       </div>
 
@@ -812,7 +812,7 @@ function ModelForm({ model, onChange, onCapsTouched }) {
             )}
           </div>
 
-          {field("Quality Options (comma-separated, kosong = none)", "capabilities.qualityOptions",
+          {field("Quality Options (comma-separated, empty = none)", "capabilities.qualityOptions",
             <input type="text"
               value={(caps.qualityOptions || []).join(",")}
               placeholder="e.g. TURBO,BALANCED,QUALITY"
@@ -825,7 +825,7 @@ function ModelForm({ model, onChange, onCapsTouched }) {
             />
           )}
 
-          {field("Preprocessor ID (v1 only, kosong = none)", "capabilities.preprocessorId",
+          {field("Preprocessor ID (V1 only, empty = none)", "capabilities.preprocessorId",
             <input type="number"
               value={caps.preprocessorId || ""}
               placeholder="e.g. 364"

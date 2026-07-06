@@ -37,8 +37,8 @@ export default function AmmailTutorialPage() {
         <div className="flex items-center gap-3">
           <span className="material-symbols-outlined text-primary text-[28px]">auto_stories</span>
           <div>
-            <h1 className="text-xl font-bold">Panduan Lengkap Deploy Temp Mail</h1>
-            <p className="text-xs text-white/50 mt-0.5">Panduan integrasi Cloudflare Worker & D1 Database untuk 9router</p>
+            <h1 className="text-xl font-bold">Complete Temporary Mail Deployment Guide</h1>
+            <p className="text-xs text-white/50 mt-0.5">Cloudflare Worker and D1 Database integration guide for 9Router</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -46,7 +46,7 @@ export default function AmmailTutorialPage() {
             href="/dashboard/automation"
             className="px-3.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs font-semibold hover:bg-white/10 transition-colors cursor-pointer"
           >
-            Kembali ke Dashboard
+            Back to Dashboard
           </a>
         </div>
       </div>
@@ -55,7 +55,7 @@ export default function AmmailTutorialPage() {
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-xs text-primary/95 flex items-start gap-3">
           <span className="material-symbols-outlined shrink-0 mt-0.5">lightbulb</span>
           <p>
-            <strong>Info Penting:</strong> Panduan ini ditujukan jika Anda ingin melakukan deployment secara manual ke Cloudflare menggunakan CLI. Jika Anda ingin setup otomatis, silakan kembali ke Dashboard dan gunakan form <strong>⚡ Auto Deploy (Cloudflare)</strong> untuk setup 1-klik.
+            <strong>Important:</strong> Use this guide for manual Cloudflare deployment with the CLI. For automatic setup, return to the Dashboard and use the <strong>⚡ Auto Deploy (Cloudflare)</strong> for one-click setup.
           </p>
         </div>
 
@@ -63,10 +63,10 @@ export default function AmmailTutorialPage() {
         <div className="bg-neutral-900 border border-white/5 rounded-xl p-6 space-y-4">
           <h4 className="text-base font-bold text-white flex items-center gap-2">
             <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
-            Prasyarat & Login Cloudflare
+            Prerequisites and Cloudflare Login
           </h4>
           <p>
-            Pastikan Node.js telah terinstal di komputer Anda. Buka terminal lalu autentikasikan akun Cloudflare Anda menggunakan Wrangler CLI:
+            Make sure Node.js is installed. Open a terminal and authenticate your Cloudflare account with the Wrangler CLI:
           </p>
           <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300 gap-4">
             <span className="break-all">npx wrangler login</span>
@@ -78,10 +78,10 @@ export default function AmmailTutorialPage() {
         <div className="bg-neutral-900 border border-white/5 rounded-xl p-6 space-y-4">
           <h4 className="text-base font-bold text-white flex items-center gap-2">
             <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
-            Masuk Folder & Install Dependencies
+            Open the Directory and Install Dependencies
           </h4>
           <p>
-            Buka terminal pada direktori worker lokal Anda (`tempmail`) lalu install package dependencies:
+            Open a terminal in your local worker directory (`tempmail`) and install the package dependencies:
           </p>
           <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300 gap-4">
             <span className="break-all">cd /home/data/Project/9router/tempmail && npm install</span>
@@ -93,10 +93,10 @@ export default function AmmailTutorialPage() {
         <div className="bg-neutral-900 border border-white/5 rounded-xl p-6 space-y-4">
           <h4 className="text-base font-bold text-white flex items-center gap-2">
             <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
-            Buat Database Cloudflare D1
+            Create a Cloudflare D1 Database
           </h4>
           <p>
-            Buat database baru bernama <code>tempmail</code> pada Cloudflare D1 untuk menyimpan data kotak surat dan isi pesan:
+            New database name: <code>tempmail</code> in Cloudflare D1 stores mailbox data and message content:
           </p>
           <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300 gap-4">
             <span className="break-all">npx wrangler d1 create tempmail</span>
@@ -105,7 +105,7 @@ export default function AmmailTutorialPage() {
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3.5 text-xs text-amber-300 flex items-start gap-2.5">
             <span className="material-symbols-outlined shrink-0 mt-0.5">warning</span>
             <span>
-              Perintah di atas akan menghasilkan **database_id** (UUID). Salin ID tersebut, kemudian buka berkas <code className="bg-white/10 px-1 py-0.5 rounded font-mono text-white">wrangler.jsonc</code> di folder proyek tempmail Anda, ganti nilai <code>database_id</code> di baris terbawah dengan ID baru Anda.
+              The command above returns **database_id** (UUID). Copy that ID, open <code className="bg-white/10 px-1 py-0.5 rounded font-mono text-white">wrangler.jsonc</code> in your tempmail project, and replace <code>database_id</code> with the new ID.
             </span>
           </div>
         </div>
@@ -114,10 +114,10 @@ export default function AmmailTutorialPage() {
         <div className="bg-neutral-900 border border-white/5 rounded-xl p-6 space-y-4">
           <h4 className="text-base font-bold text-white flex items-center gap-2">
             <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span>
-            Jalankan Migrasi Database D1
+            Run D1 Database Migrations
           </h4>
           <p>
-            Buat struktur tabel database yang diperlukan dengan menerapkan migrasi database baik secara lokal maupun langsung di Cloudflare:
+            Create the required tables by applying the database migrations to Cloudflare:
           </p>
           <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300 gap-4">
             <span className="break-all">npx wrangler d1 migrations apply tempmail --remote</span>
@@ -129,10 +129,10 @@ export default function AmmailTutorialPage() {
         <div className="bg-neutral-900 border border-white/5 rounded-xl p-6 space-y-4">
           <h4 className="text-base font-bold text-white flex items-center gap-2">
             <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">5</span>
-            Buat API Access Key untuk 9router
+            Create an API Access Key for 9Router
           </h4>
           <p>
-            9router berkomunikasi dengan Worker menggunakan API Key yang aman. Jalankan perintah SQL berikut untuk mendaftarkan 9router admin ke database D1 Anda:
+            9Router communicates with the Worker through a secure API key. Run this SQL command to register the 9Router administrator in your D1 database:
           </p>
           <div className="space-y-3">
             <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300 gap-4">
@@ -144,7 +144,7 @@ export default function AmmailTutorialPage() {
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3.5 text-xs text-amber-300 flex items-start gap-2.5">
               <span className="material-symbols-outlined shrink-0 mt-0.5">info</span>
               <span>
-                Ganti <code>tm_YOUR_SECURE_API_KEY</code> dengan API Key acak pilihan Anda (misalnya menggunakan format <code>tm_</code> diikuti oleh karakter hex acak). Salin API Key ini ke pengaturan 9router Anda.
+                Replace <code>tm_YOUR_SECURE_API_KEY</code> with a random API key (for example, <code>tm_</code> followed by random hexadecimal characters). Copy this API key into your 9Router settings.
               </span>
             </div>
           </div>
@@ -154,10 +154,10 @@ export default function AmmailTutorialPage() {
         <div className="bg-neutral-900 border border-white/5 rounded-xl p-6 space-y-4">
           <h4 className="text-base font-bold text-white flex items-center gap-2">
             <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">6</span>
-            Atur Secret Tokens (Telegram & Webhook)
+            Configure Secret Tokens (Telegram and Webhook)
           </h4>
           <p>
-            Simpan token bot Telegram dan webhook secret ke dalam Cloudflare secret variables secara aman:
+            Store the Telegram bot token and webhook secret as Cloudflare secret variables:
           </p>
           <div className="space-y-3">
             <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300 gap-4">
@@ -175,10 +175,10 @@ export default function AmmailTutorialPage() {
         <div className="bg-neutral-900 border border-white/5 rounded-xl p-6 space-y-4">
           <h4 className="text-base font-bold text-white flex items-center gap-2">
             <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">7</span>
-            Deploy ke Cloudflare Workers
+            Deploy to Cloudflare Workers
           </h4>
           <p>
-            Buka file <code className="bg-white/10 px-1 py-0.5 rounded font-mono text-white">wrangler.jsonc</code>, sesuaikan parameter <code>vars</code> (domain, base URL) agar sesuai dengan domain milik Anda. Setelah itu, deploy ke Cloudflare:
+            Open the <code className="bg-white/10 px-1 py-0.5 rounded font-mono text-white">wrangler.jsonc</code>, adjust the <code>vars</code> (domain and base URL) values for your domain, then deploy to Cloudflare:
           </p>
           <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300 gap-4">
             <span className="break-all">npx wrangler deploy</span>
@@ -190,10 +190,10 @@ export default function AmmailTutorialPage() {
         <div className="bg-neutral-900 border border-white/5 rounded-xl p-6 space-y-4">
           <h4 className="text-base font-bold text-white flex items-center gap-2">
             <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">8</span>
-            Daftarkan Webhook Telegram Bot (Opsional)
+            Register the Telegram Bot Webhook (Optional)
           </h4>
           <p>
-            Daftarkan URL domain worker Anda ke API Telegram agar bot Anda dapat menerima chat command secara instan:
+            Register your worker domain with the Telegram API so the bot can receive commands immediately:
           </p>
           <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs text-amber-300 gap-4">
             <span className="break-all">
@@ -207,43 +207,43 @@ export default function AmmailTutorialPage() {
         <div className="bg-neutral-900 border border-white/5 rounded-xl p-6 space-y-4">
           <h4 className="text-base font-bold text-white flex items-center gap-2">
             <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">9</span>
-            Konfigurasi Cloudflare Email Routing & DNS (Paling Penting!)
+            Configure Cloudflare Email Routing and DNS
           </h4>
           <p>
-            Ini adalah langkah krusial agar email dapat diterima dan diproses oleh Worker yang telah dideploy. Masuk ke panel Cloudflare Anda, lalu ikuti panduan berikut:
+            This step allows the deployed Worker to receive and process email. Open your Cloudflare dashboard and follow these instructions:
           </p>
           
           <div className="space-y-4 border-l-2 border-primary/30 pl-4 mt-2">
             <div>
               <h5 className="font-bold text-white text-xs flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                Bagian A: Sinkronkan dan Kunci Rekaman DNS
+                Part A: Synchronize and Lock DNS Records
               </h5>
               <p className="text-xs text-white/70 mt-1">
-                Jika status DNS Anda tertulis <code className="bg-white/10 text-white px-1 rounded">Not configured</code> atau ada rekaman dengan status <code className="bg-amber-500/10 text-amber-300 px-1 rounded border border-amber-500/20">Unlocked</code> (misalnya TXT SPF):
+                If your DNS status is <code className="bg-white/10 text-white px-1 rounded">Not configured</code> or a record has the <code className="bg-amber-500/10 text-amber-300 px-1 rounded border border-amber-500/20">Unlocked</code> (for example, TXT SPF):
               </p>
               <ul className="list-disc list-inside text-xs text-white/70 mt-1.5 space-y-1 ml-2">
-                <li>Buka menu <strong>Email Routing</strong> di panel domain Cloudflare Anda.</li>
-                <li>Pilih tab **`Settings`** di sebelah atas.</li>
-                <li>Di sebelah kanan judul **`DNS records`**, klik tombol **`Lock`** (ikon gembok). Cloudflare akan otomatis mengunci dan menerapkan semua MX dan TXT records yang dibutuhkan untuk rute email.</li>
+                <li>Open <strong>Email Routing</strong> in your Cloudflare domain dashboard.</li>
+                <li>Select the **`Settings`** tab at the top.</li>
+                <li>to the right of **`DNS records`**, click **`Lock`** the lock icon. Cloudflare will lock and apply all required MX and TXT records.</li>
               </ul>
             </div>
 
             <div>
               <h5 className="font-bold text-white text-xs flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                Bagian B: Buat Aturan Rute Catch-All
+                Part B: Create a Catch-All Routing Rule
               </h5>
               <p className="text-xs text-white/70 mt-1">
-                Agar semua email masuk diteruskan ke database Worker Anda:
+                To forward all incoming email to your Worker database:
               </p>
               <ul className="list-disc list-inside text-xs text-white/70 mt-1.5 space-y-1 ml-2">
-                <li>Klik tab **`Routing rules`** (tab ketiga dari kiri).</li>
-                <li>Scroll ke bawah ke bagian **Catch-all address**.</li>
-                <li>Klik **Edit** / **Configure**.</li>
-                <li>Pada kolom **Action** (Aksi), pilih opsi **`Send to a Worker`** (Kirim ke Worker).</li>
-                <li>Pada kolom **Destination** (Worker tujuan), pilih nama Worker yang baru saja dideploy (contohnya: **`tempmail-pixelnest`**).</li>
-                <li>Klik **Save** untuk menyimpan aturan perutean.</li>
+                <li>Click the **`Routing rules`** (the third tab).</li>
+                <li>Scroll down to **Catch-all address**.</li>
+                <li>Click **Edit** or **Configure**.</li>
+                <li>In the **Action** , select **`Send to a Worker`** .</li>
+                <li>In the **Destination** , select the deployed Worker (for example: **`tempmail-pixelnest`**).</li>
+                <li>Click **Save** to store the routing rule.</li>
               </ul>
             </div>
           </div>
@@ -252,4 +252,3 @@ export default function AmmailTutorialPage() {
     </div>
   );
 }
-

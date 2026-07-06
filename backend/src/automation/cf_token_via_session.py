@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 cf_token_via_session.py
-Login ke akun Cloudflare yang ada, buat Workers AI token via session cookie API.
+Log in to an existing Cloudflare account and create a Workers AI token through the session-cookie API.
 Usage:
   python cf_token_via_session.py --email X --password Y --account-id Z
 """
@@ -90,9 +90,9 @@ def main():
     try:
         from camoufox.sync_api import Camoufox
     except ImportError:
-        die("Camoufox tidak terinstall")
+        die("Camoufox is not installed")
 
-    log(f"Login ke CF sebagai {args.email}...")
+    log(f"Logging in to Cloudflare as {args.email}...")
     with Camoufox(headless=args.headless, os="windows") as browser:
         page = browser.new_page()
 
@@ -142,7 +142,7 @@ def main():
         token = create_token_with_cookies(cookies, args.account_id)
 
         if token:
-            log(f"TOKEN BERHASIL: {token[:12]}...")
+            log(f"TOKEN CREATED: {token[:12]}...")
             print(json.dumps({
                 "status": "success",
                 "workers_ai_token": token,

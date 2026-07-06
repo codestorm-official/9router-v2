@@ -219,7 +219,7 @@ export async function POST_handler(req, res) {
         } else {
           const client = await getAmmailClientFromSettings();
           if (!client.configured) {
-            return res.status(400).json({ error: "Ammail belum dikonfigurasi." });
+            return res.status(400).json({ error: "Ammail is not configured." });
           }
           testClient = client;
         }
@@ -235,7 +235,7 @@ export async function POST_handler(req, res) {
       const { cf_account_id, cf_api_token, cf_domain, telegram_bot_token } = body;
       
       if (!cf_account_id || !cf_api_token || !cf_domain) {
-        return res.status(400).json({ error: "Account ID, API Token, dan Domain wajib diisi." });
+        return res.status(400).json({ error: "Account ID, API Token, and Domain are required." });
       }
 
       const execEnv = {
@@ -278,13 +278,13 @@ export async function POST_handler(req, res) {
             if (match) {
               databaseId = match[1];
             } else {
-              throw new Error("Gagal mengekstrak ID database D1: " + stdout);
+              throw new Error("Failed to extract the D1 database ID: " + stdout);
             }
           }
         }
 
         if (!databaseId) {
-          throw new Error("Gagal mendapatkan atau membuat database D1.");
+          throw new Error("Failed to retrieve or create the D1 database.");
         }
 
         const parts = cf_domain.split(".");
@@ -338,10 +338,10 @@ export async function POST_handler(req, res) {
         };
         await fs.promises.writeFile(`${cwd}/wrangler.jsonc`, JSON.stringify(wranglerConfig, null, 2));
 
-        // 3. Jalankan Migrasi Database
+        // 3. Run database migrations
         await execAsync("echo 'y' | npx wrangler d1 migrations apply tempmail-9router --remote", { env: execEnv, cwd });
 
-        // 4. Buat system API key untuk 9router
+        // 4. Create a system API key for 9Router
         const generatedApiKey = "tm_" + crypto.randomBytes(16).toString("hex");
         const sqlCommand = `
           INSERT OR IGNORE INTO chats (chat_id, username, first_name, last_name, created_at, updated_at)
@@ -352,7 +352,7 @@ export async function POST_handler(req, res) {
         `;
         await execAsync(`npx wrangler d1 execute tempmail-9router --remote --command="${sqlCommand.replace(/\n/g, " ").replace(/"/g, '\\"')}"`, { env: execEnv, cwd });
 
-        // 5. Simpan Secrets (Telegram)
+        // 5. Save Telegram secrets
         if (telegram_bot_token) {
           await execAsync(`echo "${telegram_bot_token.trim()}" | npx wrangler secret put TELEGRAM_BOT_TOKEN`, { env: execEnv, cwd });
         } else {
@@ -373,7 +373,7 @@ export async function POST_handler(req, res) {
           workersDevUrl = devUrlMatch[0];
         }
 
-        // 7. Jika ada Telegram Bot Token, set webhook
+        // 7. Configure the webhook when a Telegram Bot Token is available
         if (telegram_bot_token) {
           try {
             await fetch(`https://api.telegram.org/bot${telegram_bot_token.trim()}/setWebhook`, {
@@ -386,11 +386,11 @@ export async function POST_handler(req, res) {
               })
             });
           } catch (e) {
-            console.error("Gagal mendaftarkan webhook Telegram:", e);
+            console.error("Failed to register the Telegram webhook:", e);
           }
         }
 
-        // 8. Simpan setelan ke database lokal 9router
+        // 8. Save settings to the local 9Router database
         const updates = {
           ammail_base_url: `https://${cf_domain}`,
           ammail_api_key: generatedApiKey,
@@ -420,7 +420,7 @@ export async function POST_handler(req, res) {
 
     const client = await getAmmailClientFromSettings();
     if (!client.configured) {
-      return res.status(400).json({ error: "Ammail belum dikonfigurasi." });
+      return res.status(400).json({ error: "Ammail is not configured." });
     }
 
     // ── Action: Create Inbox ─────────────────────────────────────────

@@ -1274,13 +1274,13 @@ export default function ProviderDetailPage() {
         <div style={{ marginBottom: 16, padding: "12px 16px", background: "#0c1a2e", border: "1px solid #1e3a5f", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontWeight: 600, fontSize: 14, color: "#60a5fa" }}>🪄 Weavy Token Pool</div>
-            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>Copy firebase_refresh_token, firebase_api_key, dan JWT untuk dipakai di sistem lain (kliperspro, dll.)</div>
+            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>Copy firebase_refresh_token, firebase_api_key, and JWT for use in other systems (Kliperspro, etc.).</div>
           </div>
           <a
             href="/dashboard/providers/weavy/pool"
             style={{ padding: "7px 16px", borderRadius: 6, background: "#1e3a5f", border: "1px solid #2563eb", color: "#93c5fd", fontSize: 13, fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}
           >
-            Buka Token Pool →
+            Open Token Pool →
           </a>
         </div>
       )}

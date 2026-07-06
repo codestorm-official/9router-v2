@@ -2,7 +2,7 @@
   "name": "9router-v3",
   "private": true,
   "version": "3.0.0",
-  "description": "9Router V3 by codestorm — Railway-ready AI gateway monorepo",
+  "description": "9Router V3 by codestorm — self-hosted AI gateway monorepo",
   "workspaces": [
     "frontend",
     "backend",
@@ -14,6 +14,7 @@
     "backend": "npm run dev --workspace=9router-backend",
     "frontend": "npm run dev --workspace=9router-frontend",
     "start": "npm run start --workspace=9router-backend",
+    "heroku-postbuild": "npm run build",
     "typecheck": "npm run typecheck --workspace=9router-backend && npm run typecheck --workspace=9router-frontend"
   },
   "devDependencies": {

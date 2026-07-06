@@ -26,7 +26,7 @@ function CopyBtn({ value, label = "Copy" }) {
     <button
       onClick={copy}
       disabled={!value}
-      title={value ? value.slice(0, 60) + (value.length > 60 ? "…" : "") : "Tidak tersedia"}
+      title={value ? value.slice(0, 60) + (value.length > 60 ? "…" : "") : "Unavailable"}
       style={{
         padding: "2px 10px",
         fontSize: 11,
@@ -159,7 +159,7 @@ export default function WeavyPoolPage() {
             🪄 Weavy Token Pool
           </h1>
           <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6b7280" }}>
-            Copy firebase_refresh_token + firebase_api_key ke kliperspro atau sistem lain
+            Copy firebase_refresh_token + firebase_api_key to Kliperspro or another system
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -178,28 +178,28 @@ export default function WeavyPoolPage() {
       {/* Stats */}
       {stats && (
         <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
-          {statBox("Total Akun", stats.total, "#e5e7eb")}
+          {statBox("Total Accounts", stats.total, "#e5e7eb")}
           {statBox("Aktif", stats.active, "#22c55e")}
           {statBox("JWT Valid", stats.jwtValid, "#6366f1")}
-          {statBox("Punya Refresh Token", stats.hasRefreshToken, "#f59e0b")}
+          {statBox("Has Refresh Token", stats.hasRefreshToken, "#f59e0b")}
         </div>
       )}
 
       {/* Info box */}
       {stats && stats.hasRefreshToken === 0 && (
         <div style={{ background: "#431407", border: "1px solid #7c2d12", borderRadius: 8, padding: "12px 16px", marginBottom: 20, fontSize: 13, color: "#fed7aa" }}>
-          ⚠️ <strong>firebase_refresh_token masih kosong</strong> untuk semua akun. 
-          Jalankan ulang signup untuk akun-akun ini agar refresh token tertangkap dari IndexedDB.
+          ⚠️ <strong>firebase_refresh_token is still empty</strong> for all accounts.
+          Run signup again for these accounts so the refresh token can be captured from IndexedDB.
         </div>
       )}
 
       {/* Firebase usage guide */}
       <div style={{ background: "#0c1a2e", border: "1px solid #1e3a5f", borderRadius: 8, padding: "12px 16px", marginBottom: 20, fontSize: 12 }}>
-        <strong style={{ color: "#60a5fa" }}>📋 Cara pakai di kliperspro (production):</strong>
+        <strong style={{ color: "#60a5fa" }}>📋 How to use this in Kliperspro (production):</strong>
         <pre style={{ margin: "8px 0 0", color: "#93c5fd", fontSize: 11, overflow: "auto" }}>{`POST https://securetoken.googleapis.com/v1/token?key=<firebase_api_key>
 Body: grant_type=refresh_token&refresh_token=<firebase_refresh_token>
-→ Response: { id_token: "<JWT baru>", refresh_token: "<update ini>" }
-→ Gunakan id_token sebagai: Authorization: Bearer <JWT>`}</pre>
+→ Response: { id_token: "<new JWT>", refresh_token: "<updated value>" }
+→ Use id_token as: Authorization: Bearer <JWT>`}</pre>
       </div>
 
       {/* Search + filter */}
@@ -222,20 +222,20 @@ Body: grant_type=refresh_token&refresh_token=<firebase_refresh_token>
               color: filter === f ? "#a5b4fc" : "#9ca3af",
             }}
           >
-            {{ all: "Semua", hasToken: "✅ Punya Token", noToken: "❌ Tanpa Token", validJwt: "🔑 JWT Valid" }[f]}
+            {{ all: "All", hasToken: "✅ Has Token", noToken: "❌ No Token", validJwt: "🔑 Valid JWT" }[f]}
           </button>
         ))}
       </div>
 
       {/* Table */}
       {loading ? (
-        <div style={{ textAlign: "center", color: "#6b7280", padding: 40 }}>Memuat…</div>
+        <div style={{ textAlign: "center", color: "#6b7280", padding: 40 }}>Loading…</div>
       ) : error ? (
         <div style={{ color: "#f87171", padding: 20 }}>Error: {error}</div>
       ) : (
         <div>
           <div style={{ color: "#6b7280", fontSize: 12, marginBottom: 8 }}>
-            Menampilkan {filtered.length} dari {pool.length} akun
+            Showing {filtered.length} of {pool.length} accounts
           </div>
           {filtered.map((acc) => (
             <div key={acc.id} style={{ ...cardStyle, opacity: acc.isActive ? 1 : 0.5 }}>
@@ -298,7 +298,7 @@ Body: grant_type=refresh_token&refresh_token=<firebase_refresh_token>
             </div>
           ))}
           {filtered.length === 0 && (
-            <div style={{ textAlign: "center", color: "#6b7280", padding: 40 }}>Tidak ada akun ditemukan</div>
+            <div style={{ textAlign: "center", color: "#6b7280", padding: 40 }}>No accounts found</div>
           )}
         </div>
       )}

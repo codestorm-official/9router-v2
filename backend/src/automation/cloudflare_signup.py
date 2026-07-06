@@ -50,7 +50,7 @@ def ammail_request(base_url, api_key, path, method="GET", data=None, host_header
     req.add_header("Content-Type", "application/json")
     req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")
     req.add_header("Accept", "application/json, */*")
-    # Nginx vhost routing: tambah Host header jika base_url adalah localhost
+    # Nginx virtual-host routing: add a Host header when base_url is localhost
     if host_header:
         req.add_header("Host", host_header)
     elif "localhost" in base_url or "127.0.0.1" in base_url:
@@ -70,7 +70,7 @@ def create_ammail_inbox(base_url, api_key, email):
         pass  # might already exist
 
 def wait_for_cf_verify_email(base_url, api_key, email, timeout=120):
-    log_step(f"Menunggu email verifikasi Cloudflare ({email})...")
+    log_step(f"Waiting for the Cloudflare verification email ({email})...")
     alias = email.split("@")[0]
     deadline = time.time() + timeout
     seen_ids = set()
@@ -102,7 +102,7 @@ def wait_for_cf_verify_email(base_url, api_key, email, timeout=120):
                         links = re.findall(pat, body)
                         if links:
                             link = links[0].rstrip(".")
-                            log_step(f"Link verifikasi ditemukan!")
+                            log_step("Verification link found!")
                             return link
         except Exception as e:
             log_step(f"Ammail poll error: {e}")
@@ -115,7 +115,7 @@ CF_SIGNUP_PAGE_URL = "https://dash.cloudflare.com/sign-up"
 
 def solve_turnstile_2captcha(api_key, page_url, sitekey, timeout=120):
     """Submit Turnstile to 2Captcha and wait for solution token."""
-    log_step("Mengirim Turnstile ke 2Captcha untuk diselesaikan...")
+    log_step("Sending Turnstile to 2Captcha for solving...")
     try:
         # Submit task
         submit_data = {
@@ -261,14 +261,14 @@ def try_click_turnstile_checkbox(page) -> bool:
 def wait_for_cf_clearance(page, timeout=45.0):
     if not is_on_turnstile_page(page):
         return True
-    log_step("Cloudflare Turnstile terdeteksi, menunggu resolve...")
+    log_step("Cloudflare Turnstile detected; waiting for resolution...")
     deadline = time.time() + timeout
     click_attempts = 0
     next_click_at = time.time() + 4.0
     while time.time() < deadline:
         time.sleep(2.0)
         if not is_on_turnstile_page(page):
-            log_step("Turnstile selesai!")
+            log_step("Turnstile solved!")
             try:
                 page.wait_for_load_state("networkidle", timeout=5000)
             except Exception:
@@ -277,7 +277,7 @@ def wait_for_cf_clearance(page, timeout=45.0):
         now = time.time()
         if click_attempts < 5 and now >= next_click_at:
             click_attempts += 1
-            log_step(f"Klik Turnstile checkbox (attempt {click_attempts}/5)...")
+            log_step(f"Clicking the Turnstile checkbox (attempt {click_attempts}/5)...")
             try_click_turnstile_checkbox(page)
             next_click_at = now + 8.0
             time.sleep(2.0)
@@ -370,7 +370,7 @@ def handle_identity_verification(page, ammail_base_url, ammail_api_key, email):
         send_btn = page.locator("button:has-text('Send Verification Code')").first
         if send_btn.is_visible(timeout=2000):
             send_btn.click()
-            log_step("Klik Send Verification Code...")
+            log_step("Clicking Send Verification Code...")
             time.sleep(3)
         else:
             # Try clicking Cancel and skip
@@ -381,10 +381,10 @@ def handle_identity_verification(page, ammail_base_url, ammail_api_key, email):
 
         # Fetch OTP from Ammail
         if not ammail_base_url or not ammail_api_key:
-            log_step("Ammail tidak dikonfigurasi, tidak bisa ambil OTP")
+            log_step("Ammail is not configured; cannot retrieve OTP")
             return False
 
-        log_step("Menunggu OTP di Ammail...")
+        log_step("Waiting for an OTP from Ammail...")
         otp_code = None
         for attempt in range(20):  # 60 seconds
             time.sleep(3)
@@ -399,7 +399,7 @@ def handle_identity_verification(page, ammail_base_url, ammail_api_key, email):
                     otp_match = _re.search(r'\b(\d{6})\b', body)
                     if otp_match:
                         otp_code = otp_match.group(1)
-                        log_step(f"OTP ditemukan: {otp_code}")
+                        log_step(f"OTP found: {otp_code}")
                         break
             except Exception as e:
                 log_step(f"Ammail OTP fetch error: {e}")
@@ -407,7 +407,7 @@ def handle_identity_verification(page, ammail_base_url, ammail_api_key, email):
                 break
 
         if not otp_code:
-            log_step("OTP tidak diterima dalam 60 detik")
+            log_step("OTP was not received within 60 seconds")
             return False
 
         # Enter OTP
@@ -429,7 +429,7 @@ def handle_identity_verification(page, ammail_base_url, ammail_api_key, email):
                 except Exception:
                     continue
         else:
-            log_step("OTP input field tidak ditemukan")
+            log_step("OTP input field was not found")
     except Exception as e:
         log_step(f"handle_identity_verification error: {e}")
     return False
@@ -466,7 +466,7 @@ def extract_global_api_key(page, password, ammail_base_url="", ammail_api_key=""
         # Password confirmation modal
         pw_input = page.locator("input[type='password']").first
         if pw_input.is_visible(timeout=3000):
-            log_step("Mengisi password konfirmasi...")
+            log_step("Entering the confirmation password...")
             pw_input.fill(password)
             time.sleep(0.5)
             # Click confirm button
@@ -525,18 +525,18 @@ def main():
     parser.add_argument("--2captcha-key", default="", dest="captcha_key")
     # ── Manual override: skip automation, paste token directly ────────────────
     parser.add_argument("--token", default="",
-                        help="Paste CF API token manual — skip seluruh automation")
+                        help="Paste a Cloudflare API token manually and skip all automation")
     parser.add_argument("--account-id", default="", dest="account_id_arg",
-                        help="Cloudflare Account ID (wajib jika pakai --token)")
+                        help="Cloudflare Account ID (required with --token)")
     parser.add_argument("--stagger-delay", type=int, default=0, dest="stagger_delay",
-                        help="Delay (detik) sebelum launch browser, untuk stagger concurrent instances")
+                        help="Delay in seconds before launching the browser to stagger concurrent instances")
     args = parser.parse_args()
 
-    # ── Shortcut: jika user paste token manual, langsung simpan ──────────────
+    # ── Shortcut: save immediately when the user supplies a token manually ──────────────
     if args.token:
         if not args.account_id_arg:
             die("--token butuh --account-id juga")
-        log_step(f"Mode manual token: {args.token[:12]}...")
+        log_step(f"Manual token mode: {args.token[:12]}...")
         success(args.token.strip(), args.account_id_arg.strip(), args.email)
         return
 
@@ -544,7 +544,7 @@ def main():
     try:
         from camoufox.sync_api import Camoufox
     except ImportError:
-        die("Camoufox tidak terinstall. Jalankan: pip install camoufox && python -m camoufox fetch")
+        die("Camoufox is not installed. Run: pip install camoufox && python -m camoufox fetch")
 
     profiles_dir = Path(args.profiles_dir)
     profiles_dir.mkdir(parents=True, exist_ok=True)
@@ -552,7 +552,7 @@ def main():
     # Pre-create Ammail inbox if we have credentials
     ammail_ok = bool(args.ammail_base_url and args.ammail_api_key and args.ammail_domain)
     if ammail_ok:
-        log_step(f"Membuat inbox Ammail untuk {args.email}...")
+        log_step(f"Creating an Ammail inbox for {args.email}...")
         try:
             create_ammail_inbox(args.ammail_base_url, args.ammail_api_key, args.email)
         except Exception as e:
@@ -600,7 +600,7 @@ def main():
     except Exception as _pe:
         _ps = str(_pe)
         if proxy_dict and any(k in _ps for k in ("InvalidProxy","Tunnel connection","Failed to connect to proxy","ProxyError")):
-            log_step(f"Proxy dead ({proxy_dict.get('server','?')}) — fallback tanpa proxy")
+            log_step(f"Proxy unavailable ({proxy_dict.get('server','?')}) — falling back without a proxy")
             launch_kwargs.pop("proxy", None)
             launch_kwargs.pop("geoip", None)
             browser_ctx = _make_camoufox(dict(launch_kwargs))
@@ -622,7 +622,7 @@ def main():
         time.sleep(random.uniform(1.5, 2.5))
 
         # ── Step 2: Fill email ────────────────────────────────────────────────
-        log_step("Menunggu form signup muncul...")
+        log_step("Waiting for the signup form...")
         form_found = False
         for attempt in range(3):
             try:
@@ -630,7 +630,7 @@ def main():
                 form_found = True
                 break
             except Exception:
-                log_step(f"Form belum muncul (attempt {attempt+1}), reload...")
+                log_step(f"Form has not appeared (attempt {attempt+1}); reloading...")
                 try:
                     page.reload(wait_until="load", timeout=20000)
                     wait_for_cf_clearance(page, timeout=15)
@@ -638,9 +638,9 @@ def main():
                 except Exception:
                     pass
         if not form_found:
-            die("Form signup tidak muncul setelah 3 percobaan")
+            die("Signup form did not appear after three attempts")
 
-        log_step("Mengisi email...")
+        log_step("Entering the email address...")
         email_sel = [
             "input[name='email']",
             "input[autocomplete='email']",
@@ -659,10 +659,10 @@ def main():
             except Exception:
                 continue
         if not email_filled:
-            die("Tidak bisa menemukan input email di halaman signup Cloudflare")
+            die("Could not find the email input on the Cloudflare signup page")
 
         # ── Step 3: Fill password ─────────────────────────────────────────────
-        log_step("Mengisi password...")
+        log_step("Entering the password...")
         pw_inputs = page.locator("input[name='password'], input[type='password']")
         pw_count = pw_inputs.count()
         if pw_count >= 1:
@@ -691,7 +691,7 @@ def main():
 
         # Fallback: 2Captcha
         if not turnstile_solved and args.captcha_key:
-            log_step("Turnstile belum solved, pakai 2Captcha...")
+            log_step("Turnstile is not solved; using 2Captcha...")
             token_2c = solve_turnstile_2captcha(
                 args.captcha_key,
                 CF_SIGNUP_PAGE_URL,
@@ -703,9 +703,9 @@ def main():
                 turnstile_solved = True
                 time.sleep(1)
             else:
-                log_step("2Captcha gagal, tetap coba submit...")
+                log_step("2Captcha failed; attempting submission anyway...")
         elif not turnstile_solved:
-            log_step("Tidak ada 2Captcha key, lanjut submit tanpa solve...")
+            log_step("No 2Captcha key is configured; submitting without solving...")
 
         # ── Step 5: Submit form ───────────────────────────────────────────────
         log_step("Submit form registrasi...")
@@ -727,7 +727,7 @@ def main():
             except Exception:
                 continue
         if not submitted:
-            die("Tidak bisa menemukan tombol submit registrasi")
+            die("Could not find the registration submit button")
 
         time.sleep(3)
 
@@ -740,12 +740,12 @@ def main():
             already_kw = [
                 "already registered", "already exists", "already in use",
                 "already taken", "account exists", "email exists",
-                "sudah terdaftar", "already have an account",
+                "already registered", "already have an account",
                 "email address is already"
             ]
             for kw in already_kw:
                 if kw in page_text_lower:
-                    log_step(f"Email sudah terdaftar ({args.email}) — detected: '{kw}'")
+                    log_step(f"Email is already registered ({args.email}) — detected: '{kw}'")
                     email_already_registered = True
                     break
         except Exception as e:
@@ -787,11 +787,11 @@ def main():
                 except Exception as e:
                     log_step(f"Warning navigasi verify link: {e}")
             else:
-                log_step("Email verifikasi tidak diterima dalam 2 menit, lanjut coba login...")
+                log_step("Verification email was not received within two minutes; attempting login...")
         elif email_already_registered:
-            log_step("Email sudah terdaftar — skip verifikasi, langsung ke login form")
+            log_step("Email is already registered — skip verification and continue to the login form")
         else:
-            log_step("Ammail tidak dikonfigurasi — skip email verification, lanjut login manual...")
+            log_step("Ammail is not configured — skip email verification and continue with manual login...")
             time.sleep(5)
 
 
@@ -802,9 +802,9 @@ def main():
         _m_verify = re.search(r"/([a-f0-9]{32})(?:/|$)", _post_verify_url)
         if _m_verify:
             _early_account_id = _m_verify.group(1)
-            log_step(f"Sudah di dashboard setelah verify! Account ID: {_early_account_id[:8]}...")
+            log_step(f"Reached the dashboard after verification! Account ID: {_early_account_id[:8]}...")
         else:
-            log_step("Login ke Cloudflare Dashboard...")
+            log_step("Logging in to the Cloudflare Dashboard...")
             try:
                 page.goto("https://dash.cloudflare.com/login", wait_until="domcontentloaded", timeout=20000)
                 time.sleep(2)
@@ -813,13 +813,13 @@ def main():
                 _m_redir = re.search(r"/([a-f0-9]{32})(?:/|$)", page.url)
                 if _m_redir:
                     _early_account_id = _m_redir.group(1)
-                    log_step(f"Redirect otomatis ke dashboard: {_early_account_id[:8]}...")
+                    log_step(f"Automatically redirected to the dashboard: {_early_account_id[:8]}...")
                 else:
                     # Wait for login form
                     try:
                         page.wait_for_selector("input[name='email'], input[autocomplete='email']", timeout=8000)
                     except Exception:
-                        log_step("Login form tidak muncul, cek URL...")
+                        log_step("Login form did not appear; checking the URL...")
                         _m2 = re.search(r"/([a-f0-9]{32})(?:/|$)", page.url)
                         if _m2:
                             _early_account_id = _m2.group(1)
@@ -944,7 +944,7 @@ def main():
                             except Exception:
                                 continue
 
-                        log_step("Menunggu redirect ke dashboard...")
+                        log_step("Waiting for the dashboard redirect...")
                         time.sleep(10)
                         page.screenshot(path="/tmp/cf_after_login_submit.png")
 
@@ -968,9 +968,9 @@ def main():
         # ── Step 8: Get to dashboard and extract account ID ───────────────────
         # If we already got account_id from login URL, skip navigation
         if _early_account_id:
-            log_step(f"Sudah punya Account ID dari login URL, skip re-navigate.")
+            log_step(f"Account ID obtained from login URL, skip re-navigate.")
         else:
-            log_step("Memuat Cloudflare Dashboard...")
+            log_step("Loading the Cloudflare Dashboard...")
             try:
                 # Navigate to profile page — CF redirects to /{account_id}/... URL
                 page.goto("https://dash.cloudflare.com/profile", wait_until="domcontentloaded", timeout=30000)
@@ -1054,7 +1054,7 @@ def main():
         # Method 4: Navigate to /home and wait for account_id in URL redirect
         if not account_id:
             try:
-                log_step("Navigasi /home untuk dapat account_id dari URL...")
+                log_step("Navigating to /home to obtain account_id from the URL...")
                 page.goto("https://dash.cloudflare.com/", wait_until="domcontentloaded", timeout=20000)
                 for _ in range(10):
                     time.sleep(1)
@@ -1068,14 +1068,14 @@ def main():
             except Exception as e:
                 log_step(f"Method 4 error: {e}")
 
-        # ── Step 9/10: Buat Workers AI Token via Session API ─────────────────
+        # ── Step 9/10: Create a Workers AI Token through the Session API ──────
         global_key = None
         workers_ai_token = None
 
         if not account_id:
-            die("Tidak bisa membuat API Token: account_id tidak ditemukan")
+            die("Could not create an API token: account_id was not found")
 
-        log_step("Membuat Workers AI API Token...")
+        log_step("Creating a Workers AI API token...")
 
         # ── Strategy A: Get Global API Key → create token via CF API ────────────
         # Capture ammail vars into local scope for nested function closure
@@ -1085,7 +1085,7 @@ def main():
         def create_token_via_global_key(page):
             """Navigate to API Keys page, get Global API Key, use CF API to create token."""
             import requests as _req
-            log_step("Mencoba ambil Global API Key dari dashboard...")
+            log_step("Attempting to retrieve the Global API Key from the dashboard...")
             try:
                 # Navigate to API keys page — force reload so Global API Key section is visible
                 page.goto("https://dash.cloudflare.com/profile/api-tokens", wait_until="domcontentloaded", timeout=20000)
@@ -1157,7 +1157,7 @@ def main():
                                         subj_m = _re_otp.search(r'token[:\s]+(\d{5,9})', subj, _re_otp.I)
                                         if subj_m:
                                             otp_code = subj_m.group(1)
-                                            log_step(f"OTP dari subject: {otp_code}")
+                                            log_step(f"OTP from subject: {otp_code}")
                                         else:
                                             # Strategy 2: fetch body
                                             try:
@@ -1172,7 +1172,7 @@ def main():
                                                     try: otp_code = ctx_m.group(1)
                                                     except: otp_code = ctx_m.group(0)
                                                     if otp_code and len(set(otp_code)) > 1:
-                                                        log_step(f"OTP dari body: {otp_code}")
+                                                        log_step(f"OTP from body: {otp_code}")
                                             except Exception as _be:
                                                 log_step(f"OTP body error: {_be}")
                                         if otp_code:
@@ -1439,11 +1439,11 @@ def main():
                     time.sleep(2)
 
                 if not global_key:
-                    log_step("Global API Key tidak ditemukan")
+                    log_step("Global API Key was not found")
                     return None
 
                 # Use Global API Key to create Workers AI token via CF API
-                api_email_header = args.email  # email dari outer scope
+                api_email_header = args.email  # email from the outer scope
                 headers = {
                     "X-Auth-Email": api_email_header,
                     "X-Auth-Key": global_key,
@@ -1488,7 +1488,7 @@ def main():
             Carries browser session cookies but bypasses browser CORS + proxy
             restrictions that cause NetworkError in page.evaluate fetch().
             """
-            log_step("Mencoba buat token via Playwright request API...")
+            log_step("Attempting to create a token through the Playwright request API...")
             try:
                 # Try api.cloudflare.com with session cookies (may include CF_Authorization)
                 base = "https://api.cloudflare.com/client/v4"
@@ -1574,7 +1574,7 @@ def main():
         workers_ai_token = None
         token_from_route = []  # always init — used later regardless of GAK success
         if ammail_ok:
-            log_step("Mencoba GAK dulu (skip UI form yang sering gagal)...")
+            log_step("Trying the Global API Key first (skip the frequently failing UI form)...")
             try:
                 workers_ai_token = create_token_via_global_key(page)
                 if workers_ai_token:
@@ -1643,18 +1643,18 @@ def main():
         if account_id:
             log_step(f"Account ID confirmed: {account_id[:8]}...")
         else:
-            log_step("WARN: Account ID tidak ditemukan, lanjut tanpa account_id")
+            log_step("WARN: Account ID was not found; continuing without account_id")
 
-        # ── Step 9: Skip Global API Key (needs OTP) — buat Account API Token langsung ──
+        # ── Step 9: Skip Global API Key (needs OTP) — create an Account API Token directly ──
         global_key = None
         if not workers_ai_token:  # don't reset if GAK already succeeded!
             workers_ai_token = None
 
         if not account_id:
-            die("Tidak bisa membuat API Token: account_id tidak ditemukan")
+            die("Could not create an API token: account_id was not found")
 
         # ── Step 10: Create Workers AI Token — proper CF UI flow ──────────────
-        log_step("Membuat Workers AI API Token via browser...")
+        log_step("Creating a Workers AI API token through the browser...")
         try:
             # Helper: dismiss any OneTrust / GDPR cookie consent dialogs
             def dismiss_consent_dialogs(page):
@@ -2320,7 +2320,7 @@ def main():
                 cfut_m = _re_tok.search(r'\b(cfut_[A-Za-z0-9_\-]{30,})\b', body_text)
                 if cfut_m and not workers_ai_token:
                     workers_ai_token = cfut_m.group(1)
-                    log_step(f"Token dari body regex: {workers_ai_token[:12]}...")
+                    log_step(f"Token from body regex: {workers_ai_token[:12]}...")
             except Exception as _e:
                 log_step(f"Body token regex: {_e}")
 
@@ -2336,7 +2336,7 @@ def main():
                             val = (val or "").strip()
                             if val and len(val) > 10 and ' ' not in val:
                                 workers_ai_token = val
-                                log_step(f"Token dari selector {sel}: {val[:12]}...")
+                                log_step(f"Token from selector {sel}: {val[:12]}...")
                                 break
                     except Exception:
                         continue
@@ -2351,7 +2351,7 @@ def main():
                         tok_match = _re.search(pattern, body)
                         if tok_match:
                             workers_ai_token = tok_match.group(1)
-                            log_step(f"Token dari body: {workers_ai_token[:12]}...")
+                            log_step(f"Token from body: {workers_ai_token[:12]}...")
                             break
                 except Exception:
                     pass
@@ -2371,7 +2371,7 @@ def main():
 
         # Strategy A: Global API Key from dashboard UI (last resort — needs OTP from email)
         if not workers_ai_token and ammail_ok:
-            log_step("Fallback: mencoba Global API Key dari dashboard UI...")
+            log_step("Fallback: trying the Global API Key from the dashboard UI...")
             try:
                 global_key_token = create_token_via_global_key(page)
                 if global_key_token:
@@ -2381,10 +2381,10 @@ def main():
                 log_step(f"Global API Key fallback error: {gke}")
 
         if not workers_ai_token:
-            die("Tidak ada API key yang bisa digunakan")
+            die("No usable API key was found")
 
 
-        log_step("Selesai! Menyimpan kredensial ke 9router...")
+        log_step("Complete! Saving credentials to 9Router...")
         success(workers_ai_token, account_id, args.email)
 
 

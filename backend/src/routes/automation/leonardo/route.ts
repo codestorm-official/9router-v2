@@ -97,11 +97,11 @@ export async function POST_handler(req, res) {
       const config = await getConfig();
       const model = body.model;
       if (!model?.id || !model?.name) {
-        return res.status(400).json({ error: "model.id dan model.name wajib diisi" });
+        return res.status(400).json({ error: "model.id and model.name are required" });
       }
       if (!model.id.startsWith("leo-")) model.id = `leo-${model.id}`;
       if (config.models.some(m => m.id === model.id)) {
-        return res.status(409).json({ error: `Model "${model.id}" sudah ada` });
+        return res.status(409).json({ error: `Model "${model.id}" already exists` });
       }
       config.models.push(model);
       await leoKv.set(CONFIG_KEY, config);
@@ -112,7 +112,7 @@ export async function POST_handler(req, res) {
     if (action === "update-model") {
       const config = await getConfig();
       const idx = config.models.findIndex(m => m.id === body.id);
-      if (idx === -1) return res.status(404).json({ error: "Model tidak ditemukan" });
+      if (idx === -1) return res.status(404).json({ error: "Model not found" });
       config.models[idx] = { ...config.models[idx], ...body.model };
       await leoKv.set(CONFIG_KEY, config);
       return res.json({ ok: true, model: config.models[idx] });
@@ -124,7 +124,7 @@ export async function POST_handler(req, res) {
       const before = config.models.length;
       config.models = config.models.filter(m => m.id !== body.id);
       if (config.models.length === before) {
-        return res.status(404).json({ error: "Model tidak ditemukan" });
+        return res.status(404).json({ error: "Model not found" });
       }
       await leoKv.set(CONFIG_KEY, config);
       return res.json({ ok: true });
