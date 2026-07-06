@@ -10,7 +10,7 @@ export const APP_CONFIG = {
 // GitHub configuration
 export const GITHUB_CONFIG = {
   changelogUrl: "/CHANGELOG.md",
-  donateUrl: "https://9router.com/api/donate",
+  donateUrl: "https://www.paypal.com/paypalme/selaris",
 };
 
 // Updater configuration

@@ -1,30 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import { SignInPage, Testimonial } from "@/components/ui/sign-in";
-
-const sampleTestimonials: Testimonial[] = [
-  {
-    avatarSrc: "",
-    name: "Klipers AI",
-    handle: "@klipers.pro",
-    text: "Potong video YouTube jadi shorts viral otomatis pake AI. Tempel link, langsung jadi konten!",
-    link: "https://klipers.pro"
-  },
-  {
-    avatarSrc: "",
-    name: "AMSTREAM",
-    handle: "@amstream.pro",
-    text: "Platform live streaming profesional. Multi-stream video ke YouTube, Facebook, Twitch secara bersamaan dengan satu klik.",
-    link: "https://amstream.pro"
-  },
-  {
-    avatarSrc: "",
-    name: "Tutorials",
-    handle: "@tutorial",
-    text: "Read step-by-step guides on the Docs page to connect your AI models and manage proxies.",
-    link: "/dashboard/docs"
-  },
-];
+import { SignInPage } from "@/components/ui/sign-in";
+import { GITHUB_CONFIG } from "@/shared/constants/config";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
@@ -149,8 +126,8 @@ export default function LoginPage() {
           ? "Sign in with your OIDC provider to access the dashboard"
           : "Enter your dashboard password to continue"
       }
-      heroImageSrc="https://images.unsplash.com/photo-1642615835477-d303d7dc9ee9?w=2160&q=80"
-      testimonials={sampleTestimonials}
+      donateUrl={GITHUB_CONFIG.donateUrl}
+      donateQrSrc="/images/paypal-donate-qr.svg"
       password={password}
       setPassword={setPassword}
       onSignIn={handleLogin}
