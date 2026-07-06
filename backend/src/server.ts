@@ -2,11 +2,15 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { authMiddleware } from "./middleware/auth.js";
 import { buildAutoRouter } from "./autoRouter.js";
 
 const PORT = Number(process.env.PORT) || 3001;
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5177";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const FRONTEND_DIST = path.resolve(__dirname, "../../frontend/dist");
 
 const app = express();
 
@@ -34,7 +38,21 @@ app.get("/api/health", (_req, res) => {
 });
 
 // ─── Auth Middleware ───────────────────────────────────────────────────────────
-app.use(authMiddleware);
+// Authentication only applies to API/proxy traffic. Applying it globally would
+// prevent the login page and SPA assets from loading when login is required.
+app.use((req, res, next) => {
+  if (
+    req.path === "/api" ||
+    req.path.startsWith("/api/") ||
+    req.path === "/v1" ||
+    req.path.startsWith("/v1/") ||
+    req.path === "/v1beta" ||
+    req.path.startsWith("/v1beta/")
+  ) {
+    return authMiddleware(req, res, next);
+  }
+  return next();
+});
 
 // ─── Auto-mount all routes ────────────────────────────────────────────────────
 async function start() {
@@ -52,6 +70,15 @@ async function start() {
   app.use("/v1beta", (req, res, next) => {
     req.url = "/v1beta" + req.url;
     apiRouter(req, res, next);
+  });
+
+  // Serve the production SPA from the same origin as the API.
+  app.use(express.static(FRONTEND_DIST, { index: false, redirect: false }));
+  app.use((req, res, next) => {
+    if (req.method === "GET" && req.accepts("html")) {
+      return res.sendFile(path.join(FRONTEND_DIST, "index.html"));
+    }
+    return next();
   });
 
   // ─── 404 Fallback ──────────────────────────────────────────────────────────
@@ -76,4 +103,3 @@ start().catch((err) => {
 });
 
 export { app };
-

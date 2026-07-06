@@ -9,10 +9,12 @@
     "backend/open-sse"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=frontend\"",
-    "build": "npm run build --workspace=backend && npm run build --workspace=frontend",
-    "backend": "npm run dev --workspace=backend",
-    "frontend": "npm run dev --workspace=frontend"
+    "dev": "concurrently \"npm run dev --workspace=9router-backend\" \"npm run dev --workspace=9router-frontend\"",
+    "build": "npm run build --workspace=9router-backend && npm run build --workspace=9router-frontend",
+    "backend": "npm run dev --workspace=9router-backend",
+    "frontend": "npm run dev --workspace=9router-frontend",
+    "start": "npm run start --workspace=9router-backend",
+    "typecheck": "npm run typecheck --workspace=9router-backend && npm run typecheck --workspace=9router-frontend"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

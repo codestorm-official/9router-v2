@@ -1,8 +1,11 @@
 node_modules/
+.agents/
+.codex/
 .env
 .env.*
 !.env.example
 .DS_Store
+*.tsbuildinfo
 dist/
 build/
 coverage/
@@ -28,4 +31,5 @@ out/
 # Runtime generated directories
 backend/profiles/
 backend/canva_debug/
+backend/src/automation/profiles/
 har/

@@ -10,8 +10,8 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js",
-    "build": "tsc",
+    "start": "node --loader ./bin/alias-loader.mjs dist/server.js",
+    "build": "node bin/prepare-build.cjs && tsc",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
