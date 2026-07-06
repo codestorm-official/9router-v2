@@ -6,6 +6,28 @@
 
 ---
 
+## Fork Lineage and Differences
+
+This repository is a downstream fork of [ahwanulm/9router-v2](https://github.com/ahwanulm/9router-v2). That project is itself a decoupled rewrite built from the ideas and provider integrations of the original [decolua/9router](https://github.com/decolua/9router).
+
+Full credit for the v2 architecture and its core functionality belongs to those upstream projects. This fork primarily focuses on making the application easier and more reliable to run on Railway.
+
+Compared with `ahwanulm/9router-v2`, this fork adds or changes:
+
+| Area | Changes in this fork |
+|---|---|
+| Railway deployment | Multi-stage Docker build, production frontend serving, Railway configuration, health checks, and Docker/build ignore rules |
+| Persistent data | Uses `/data` as `DATA_DIR`; persistence is provided by a Railway Volume mounted at `/data`, without an unsupported Docker `VOLUME` instruction |
+| Environment setup | Railway-friendly `.env.example`, generated secret placeholders, and automatic use of `RAILWAY_PUBLIC_DOMAIN` for the public OIDC origin |
+| Dashboard UI | Self-hosted Material Symbols so icons still render when external font services are unavailable |
+| Login and donations | Login artwork/testimonials replaced with a PayPal donation QR code; the Donate button links directly to the maintainer's PayPal |
+| API keys | Fixes API-key generation under Node ESM and adds visible loading/error feedback to the Create Key dialog |
+| Repository hygiene | Generated browser profiles, caches, local databases, build output, and other runtime artifacts are excluded from Git |
+
+This is a deployment-oriented fork rather than a claim of authorship over the original routing engine or provider integrations.
+
+---
+
 ## Screenshots
 
 | Login Page | Quota Tracker |
@@ -55,7 +77,7 @@
 ### Install
 
 ```bash
-git clone https://github.com/ahwanulm/9router-v2.git
+git clone https://github.com/codestorm-official/9router-v2.git
 cd 9router-v2
 npm install
 ```
@@ -73,35 +95,47 @@ npm run frontend     # Frontend only (port 5177)
 Copy and configure the backend environment:
 
 ```bash
-cp backend/.env.template backend/.env
+cp backend/.env.example backend/.env
 ```
 
 Key variables:
 
 | Variable | Description |
 |---|---|
-| `PORT` | Backend server port (default: `3001`) |
-| `REQUIRE_LOGIN` | Enable authentication (`true`/`false`) |
+| `PORT` | Backend server port |
 | `JWT_SECRET` | Secret for JWT signing |
-| `ADMIN_PASSWORD` | Dashboard admin password |
+| `INITIAL_PASSWORD` | Initial dashboard password |
+| `API_KEY_SECRET` | Secret used when generating API keys |
+| `DATA_DIR` | Persistent data directory; use `/data` with a Railway Volume |
 
 ---
 
 ## Production Deployment
 
-### 1. Build Frontend
+### Railway
+
+1. Create a Railway service from this repository.
+2. Add the variables from `backend/.env.example` in the service's **Variables** tab.
+3. Attach a Railway Volume with mount path `/data`.
+4. Generate a public domain under **Settings → Networking**.
+
+Railway builds the included `Dockerfile`; no separate frontend service or Docker `VOLUME` instruction is required.
+
+### Manual Deployment
+
+#### 1. Build Frontend
 
 ```bash
 cd frontend && npm run build
 ```
 
-### 2. Start Backend
+#### 2. Start Backend
 
 ```bash
 cd backend && npm start
 ```
 
-### 3. Nginx Reverse Proxy
+#### 3. Nginx Reverse Proxy
 
 Use the included `nginx.conf` to proxy `/api` and `/v1` to the backend while serving the built frontend statically. See `docs/deployment-linux.md` for a full Linux deployment guide.
 
@@ -124,7 +158,7 @@ Skills are SKILL.md files for AI coding agents. Paste the entry skill URL into y
 
 ```
 Read this skill and use it:
-https://raw.githubusercontent.com/ahwanulm/9router-v2/refs/heads/master/skills/9router/SKILL.md
+https://raw.githubusercontent.com/codestorm-official/9router-v2/refs/heads/master/skills/9router/SKILL.md
 ```
 
 Browse all skills in the Dashboard → Skills page or in the [`skills/`](./skills/) directory.
@@ -154,4 +188,4 @@ MIT — see [LICENSE](./LICENSE)
 
 ## Acknowledgements
 
-> 🙏 **Thanks to [9Router](https://github.com/decolua/9router)** — this project is a fork and architectural rewrite of the original 9Router monolith. The core routing logic, provider integrations, and many features were inspired by and built upon the excellent work of the 9Router project.
+> 🙏 **Thanks to [ahwanulm/9router-v2](https://github.com/ahwanulm/9router-v2)** for the v2 rewrite and its Express + Vite architecture, and to the original [decolua/9router](https://github.com/decolua/9router) project for the routing logic, provider integrations, and foundation on which both downstream projects were built.
