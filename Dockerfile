@@ -35,5 +35,4 @@ COPY --from=builder /app/frontend/dist ./frontend/dist
 COPY backend/src ./backend/src
 
 EXPOSE 3001
-VOLUME ["/data"]
 CMD ["npm", "run", "start", "--workspace=9router-backend"]
