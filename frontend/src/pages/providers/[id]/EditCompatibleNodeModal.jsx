@@ -3,6 +3,24 @@ import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { Button, Badge, Input, Modal, Select } from "@/shared/components";
 
+const VALIDATION_TIMEOUT_MS = 15000;
+
+async function fetchProviderNodeValidation(payload) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), VALIDATION_TIMEOUT_MS);
+  try {
+    const res = await fetch("/api/provider-nodes/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    return await res.json();
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
 export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose, isAnthropic }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -53,20 +71,18 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose,
   const handleValidate = async () => {
     setValidating(true);
     try {
-      const res = await fetch("/api/provider-nodes/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          baseUrl: formData.baseUrl,
-          apiKey: checkKey,
-          type: isAnthropic ? "anthropic-compatible" : "openai-compatible",
-          modelId: checkModelId.trim() || undefined
-        }),
+      const data = await fetchProviderNodeValidation({
+        baseUrl: formData.baseUrl,
+        apiKey: checkKey,
+        type: isAnthropic ? "anthropic-compatible" : "openai-compatible",
+        modelId: checkModelId.trim() || undefined
       });
-      const data = await res.json();
       setValidationResult(data);
-    } catch {
-      setValidationResult({ valid: false, error: "Network error" });
+    } catch (error) {
+      setValidationResult({
+        valid: false,
+        error: error.name === "AbortError" ? "Validation timeout (>15s)" : "Network error",
+      });
     } finally {
       setValidating(false);
     }

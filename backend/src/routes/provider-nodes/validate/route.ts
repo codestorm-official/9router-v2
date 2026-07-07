@@ -227,7 +227,7 @@ export async function POST_handler(req, res) {
     });
     return res.status(500).json({
       valid: false,
-      error: errorMessage 
+      error: errorMessage
     });
   }
 }

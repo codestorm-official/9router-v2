@@ -26,6 +26,24 @@ import { useNotificationStore } from "@/store/notificationStore";
 import { useHeaderSearchStore } from "@/store/headerSearchStore";
 import ModelAvailabilityBadge from "./components/ModelAvailabilityBadge";
 
+const VALIDATION_TIMEOUT_MS = 15000;
+
+async function fetchProviderNodeValidation(payload) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), VALIDATION_TIMEOUT_MS);
+  try {
+    const res = await fetch("/api/provider-nodes/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    return await res.json();
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
 function getStatusDisplay(connected, error, errorCode) {
   const parts = [];
   if (connected > 0) {
@@ -908,20 +926,18 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
   const handleValidate = async () => {
     setValidating(true);
     try {
-      const res = await fetch("/api/provider-nodes/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          baseUrl: formData.baseUrl,
-          apiKey: checkKey,
-          type: "openai-compatible",
-          modelId: checkModelId.trim() || undefined,
-        }),
+      const data = await fetchProviderNodeValidation({
+        baseUrl: formData.baseUrl,
+        apiKey: checkKey,
+        type: "openai-compatible",
+        modelId: checkModelId.trim() || undefined,
       });
-      const data = await res.json();
       setValidationResult(data);
-    } catch {
-      setValidationResult({ valid: false, error: "Network error" });
+    } catch (error) {
+      setValidationResult({
+        valid: false,
+        error: error.name === "AbortError" ? "Validation timeout (>15s)" : "Network error",
+      });
     } finally {
       setValidating(false);
     }
@@ -1098,20 +1114,18 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
   const handleValidate = async () => {
     setValidating(true);
     try {
-      const res = await fetch("/api/provider-nodes/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          baseUrl: formData.baseUrl,
-          apiKey: checkKey,
-          type: "anthropic-compatible",
-          modelId: checkModelId.trim() || undefined,
-        }),
+      const data = await fetchProviderNodeValidation({
+        baseUrl: formData.baseUrl,
+        apiKey: checkKey,
+        type: "anthropic-compatible",
+        modelId: checkModelId.trim() || undefined,
       });
-      const data = await res.json();
       setValidationResult(data);
-    } catch {
-      setValidationResult({ valid: false, error: "Network error" });
+    } catch (error) {
+      setValidationResult({
+        valid: false,
+        error: error.name === "AbortError" ? "Validation timeout (>15s)" : "Network error",
+      });
     } finally {
       setValidating(false);
     }

@@ -5,6 +5,23 @@ import { Button, Badge, Input, Modal, Select } from "@/shared/components";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
 
 const BULK_PLACEHOLDER = `name1|sk-key1\nname2|sk-key2\nsk-key-only-auto-named`;
+const VALIDATION_TIMEOUT_MS = 15000;
+
+async function fetchValidation(payload) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), VALIDATION_TIMEOUT_MS);
+  try {
+    const res = await fetch("/api/providers/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    return await res.json();
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
 
 export default function AddApiKeyModal({ isOpen, provider, providerName, isCompatible, isAnthropic, authType, authHint, website, proxyPools, error, onSave, onBulkDone, onClose }) {
   const NONE_PROXY_POOL_VALUE = "__none__";
@@ -70,22 +87,17 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
   const handleValidate = async () => {
     setValidating(true);
     try {
-      const res = await fetch("/api/providers/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider,
-          apiKey: formData.apiKey,
-          defaultModel: formData.defaultModel.trim() || undefined,
-          providerSpecificData: buildProviderSpecificData(),
-        }),
+      const data = await fetchValidation({
+        provider,
+        apiKey: formData.apiKey,
+        defaultModel: formData.defaultModel.trim() || undefined,
+        providerSpecificData: buildProviderSpecificData(),
       });
-      const data = await res.json();
       setValidationResult(data.valid ? "success" : "failed");
       setValidationError(data.valid ? "" : (data.error || "Validation failed"));
-    } catch {
+    } catch (error) {
       setValidationResult("failed");
-      setValidationError("Network error");
+      setValidationError(error.name === "AbortError" ? "Validation timeout (>15s)" : "Network error");
     } finally {
       setValidating(false);
     }
@@ -107,23 +119,18 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
         setValidating(true);
         setValidationResult(null);
         setValidationError("");
-        const res = await fetch("/api/providers/validate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            provider,
-            apiKey: formData.apiKey,
-            defaultModel: formData.defaultModel.trim() || undefined,
-            providerSpecificData: buildProviderSpecificData(),
-          }),
+        const data = await fetchValidation({
+          provider,
+          apiKey: formData.apiKey,
+          defaultModel: formData.defaultModel.trim() || undefined,
+          providerSpecificData: buildProviderSpecificData(),
         });
-        const data = await res.json();
         isValid = !!data.valid;
         setValidationResult(isValid ? "success" : "failed");
         setValidationError(isValid ? "" : (data.error || "Validation failed"));
-      } catch {
+      } catch (error) {
         setValidationResult("failed");
-        setValidationError("Network error");
+        setValidationError(error.name === "AbortError" ? "Validation timeout (>15s)" : "Network error");
       } finally {
         setValidating(false);
       }

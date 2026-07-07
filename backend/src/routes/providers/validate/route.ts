@@ -7,6 +7,11 @@ import { openaiToCommandCode } from "../../../../open-sse/translator/request/ope
 import { PROVIDER_ENDPOINTS } from "../../../shared/constants/config.js";
 import { normalizeProviderId } from "../../../lib/providerNormalization.js";
 
+const fetchWithTimeout = (url, options = {}, timeout = 10000) => {
+  const signal = options.signal || AbortSignal.timeout(timeout);
+  return fetch(url, { ...options, signal });
+};
+
 async function readResponseError(response) {
   const text = await response.text().catch(() => "");
   if (!text) return "";
@@ -132,7 +137,7 @@ export async function POST_handler(req, res) {
         }
         const baseUrl = node.baseUrl?.replace(/\/$/, "");
         const modelsUrl = `${baseUrl}/models`;
-        const modelsRes = await fetch(modelsUrl, {
+        const modelsRes = await fetchWithTimeout(modelsUrl, {
           headers: { "Authorization": `Bearer ${apiKey}` },
         });
         if (modelsRes.ok) {
@@ -143,7 +148,7 @@ export async function POST_handler(req, res) {
         }
 
         const model = body.defaultModel || body.modelId || providerSpecificData?.defaultModel || "test";
-        const chatRes = await fetch(`${baseUrl}/chat/completions`, {
+        const chatRes = await fetchWithTimeout(`${baseUrl}/chat/completions`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${apiKey}`,
@@ -170,7 +175,7 @@ export async function POST_handler(req, res) {
           return res.status(404).json({ error: "Custom Embedding node not found" });
         }
         const baseUrl = node.baseUrl?.replace(/\/$/, "");
-        const modelsRes = await fetch(`${baseUrl}/models`, {
+        const modelsRes = await fetchWithTimeout(`${baseUrl}/models`, {
           headers: { "Authorization": `Bearer ${apiKey}` },
         });
         if (modelsRes.ok) {
@@ -181,7 +186,7 @@ export async function POST_handler(req, res) {
           return res.json({ valid: false, error: "Invalid API key" });
         }
         // Fallback: probe /embeddings with a common test model — many providers lack /models
-        const embedRes = await fetch(`${baseUrl}/embeddings`, {
+        const embedRes = await fetchWithTimeout(`${baseUrl}/embeddings`, {
           method: "POST",
           headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({ model: "test", input: "ping" }),
@@ -204,7 +209,7 @@ export async function POST_handler(req, res) {
 
         const modelsUrl = `${normalizedBase}/models`;
 
-        const modelsRes = await fetch(modelsUrl, {
+        const modelsRes = await fetchWithTimeout(modelsUrl, {
           headers: {
             "x-api-key": apiKey,
             "anthropic-version": "2023-06-01",
@@ -220,7 +225,7 @@ export async function POST_handler(req, res) {
         }
 
         const model = body.defaultModel || body.modelId || providerSpecificData?.defaultModel || "test";
-        const messagesRes = await fetch(`${normalizedBase}/messages`, {
+        const messagesRes = await fetchWithTimeout(`${normalizedBase}/messages`, {
           method: "POST",
           headers: {
             "x-api-key": apiKey,
