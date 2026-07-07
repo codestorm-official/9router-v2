@@ -64,9 +64,9 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose,
         }),
       });
       const data = await res.json();
-      setValidationResult(data.valid ? "success" : "failed");
+      setValidationResult(data);
     } catch {
-      setValidationResult("failed");
+      setValidationResult({ valid: false, error: "Network error" });
     } finally {
       setValidating(false);
     }
@@ -128,9 +128,14 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose,
           hint="If provider lacks /models endpoint, enter a model ID to validate via chat/completions instead."
         />
         {validationResult && (
-          <Badge variant={validationResult === "success" ? "success" : "error"}>
-            {validationResult === "success" ? "Valid" : "Invalid"}
-          </Badge>
+          <div className="flex flex-col gap-1">
+            <Badge variant={validationResult.valid ? "success" : "error"}>
+              {validationResult.valid ? "Valid" : "Invalid"}
+            </Badge>
+            {!validationResult.valid && validationResult.error && (
+              <span className="text-sm text-red-500">{validationResult.error}</span>
+            )}
+          </div>
         )}
         <div className="flex gap-2">
           <Button onClick={handleSubmit} fullWidth disabled={!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim() || saving}>

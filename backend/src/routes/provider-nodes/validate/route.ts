@@ -49,6 +49,23 @@ const getChatErrorMessage = (status) => {
   return `Chat request failed (${status})`;
 };
 
+const readErrorBody = async (response) => {
+  const text = await response.text().catch(() => "");
+  if (!text) return "";
+  try {
+    const data = JSON.parse(text);
+    return data?.error?.message || data?.error || data?.message || data?.msg || text;
+  } catch {
+    return text;
+  }
+};
+
+const isAuthFailure = (status) => status === 401 || status === 403;
+
+const isReachableInferenceStatus = (status) => !isAuthFailure(status) && status < 500;
+
+const trimBaseUrl = (baseUrl) => baseUrl.trim().replace(/\/$/, "");
+
 // POST /api/provider-nodes/validate - Validate API key against base URL
 export async function POST_handler(req, res) {
   try {
@@ -96,7 +113,7 @@ export async function POST_handler(req, res) {
 
     // Anthropic Compatible Validation
     if (type === "anthropic-compatible") {
-      let normalizedBase = baseUrl.trim().replace(/\/$/, "");
+      let normalizedBase = trimBaseUrl(baseUrl);
       if (normalizedBase.endsWith("/messages")) {
         normalizedBase = normalizedBase.slice(0, -9);
       }
@@ -113,34 +130,41 @@ export async function POST_handler(req, res) {
 
       if (res.ok) return res.json({ valid: true });
 
-      // Auth errors - no point trying chat fallback
-      if (res.status === 401 || res.status === 403) {
+      if (isAuthFailure(res.status)) {
         return res.json({ valid: false, error: "API key unauthorized" });
       }
 
-      // Fallback: try chat/completions if modelId provided
+      // Fallback: Anthropic-compatible services usually expose /messages, not /models.
       if (modelId) {
-        const chatRes = await fetchWithTimeout(`${normalizedBase}/chat/completions`, {
+        const messagesRes = await fetchWithTimeout(`${normalizedBase}/messages`, {
           method: "POST",
           headers: {
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
             "Authorization": `Bearer ${apiKey}`,
             "Content-Type": "application/json",
-            "x-api-key": apiKey,
-            "anthropic-version": "2023-06-01"
           },
           body: JSON.stringify({
             model: modelId,
+            max_tokens: 1,
             messages: [{ role: "user", content: "ping" }],
-            max_tokens: 1
           })
         });
-        if (chatRes.ok) {
-          return res.json({ valid: true, method: "chat" });
+        if (messagesRes.ok || isReachableInferenceStatus(messagesRes.status)) {
+          const errorText = messagesRes.ok ? "" : await readErrorBody(messagesRes);
+          return res.json({
+            valid: true,
+            method: "messages",
+            warning: errorText ? String(errorText).slice(0, 200) : undefined,
+          });
+        }
+        if (isAuthFailure(messagesRes.status)) {
+          return res.json({ valid: false, error: "API key unauthorized", method: "messages" });
         }
         return res.json({
           valid: false,
-          error: getChatErrorMessage(chatRes.status),
-          method: "chat"
+          error: getChatErrorMessage(messagesRes.status),
+          method: "messages"
         });
       }
 
@@ -148,21 +172,21 @@ export async function POST_handler(req, res) {
     }
 
     // OpenAI Compatible Validation (Default)
-    const modelsUrl = `${baseUrl.replace(/\/$/, "")}/models`;
+    const normalizedBase = trimBaseUrl(baseUrl);
+    const modelsUrl = `${normalizedBase}/models`;
     const res = await fetchWithTimeout(modelsUrl, {
       headers: { "Authorization": `Bearer ${apiKey}` },
     });
 
     if (res.ok) return res.json({ valid: true });
 
-    // Auth errors - no point trying chat fallback
-    if (res.status === 401 || res.status === 403) {
+    if (isAuthFailure(res.status)) {
       return res.json({ valid: false, error: "API key unauthorized" });
     }
 
     // Fallback: try chat/completions if modelId provided
     if (modelId) {
-      const chatRes = await fetchWithTimeout(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
+      const chatRes = await fetchWithTimeout(`${normalizedBase}/chat/completions`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
@@ -174,8 +198,16 @@ export async function POST_handler(req, res) {
           max_tokens: 1
         })
       });
-      if (chatRes.ok) {
-        return res.json({ valid: true, method: "chat" });
+      if (chatRes.ok || isReachableInferenceStatus(chatRes.status)) {
+        const errorText = chatRes.ok ? "" : await readErrorBody(chatRes);
+        return res.json({
+          valid: true,
+          method: "chat",
+          warning: errorText ? String(errorText).slice(0, 200) : undefined,
+        });
+      }
+      if (isAuthFailure(chatRes.status)) {
+        return res.json({ valid: false, error: "API key unauthorized", method: "chat" });
       }
       return res.json({
         valid: false,
@@ -193,9 +225,9 @@ export async function POST_handler(req, res) {
       code: error.cause?.code,
       userMessage: errorMessage
     });
-    return res.json({ 
+    return res.status(500).json({
       valid: false,
       error: errorMessage 
-    }, { status: 500 });
+    });
   }
 }

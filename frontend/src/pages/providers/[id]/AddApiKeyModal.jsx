@@ -40,6 +40,7 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
   const [region, setRegion] = useState(defaultRegion);
   const [validating, setValidating] = useState(false);
   const [validationResult, setValidationResult] = useState(null);
+  const [validationError, setValidationError] = useState("");
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState("single"); // "single" | "bulk"
   const [bulkText, setBulkText] = useState("");
@@ -72,12 +73,19 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
       const res = await fetch("/api/providers/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider, apiKey: formData.apiKey, providerSpecificData: buildProviderSpecificData() }),
+        body: JSON.stringify({
+          provider,
+          apiKey: formData.apiKey,
+          defaultModel: formData.defaultModel.trim() || undefined,
+          providerSpecificData: buildProviderSpecificData(),
+        }),
       });
       const data = await res.json();
       setValidationResult(data.valid ? "success" : "failed");
+      setValidationError(data.valid ? "" : (data.error || "Validation failed"));
     } catch {
       setValidationResult("failed");
+      setValidationError("Network error");
     } finally {
       setValidating(false);
     }
@@ -98,16 +106,24 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
       try {
         setValidating(true);
         setValidationResult(null);
+        setValidationError("");
         const res = await fetch("/api/providers/validate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ provider, apiKey: formData.apiKey, providerSpecificData: buildProviderSpecificData() }),
+          body: JSON.stringify({
+            provider,
+            apiKey: formData.apiKey,
+            defaultModel: formData.defaultModel.trim() || undefined,
+            providerSpecificData: buildProviderSpecificData(),
+          }),
         });
         const data = await res.json();
         isValid = !!data.valid;
         setValidationResult(isValid ? "success" : "failed");
+        setValidationError(isValid ? "" : (data.error || "Validation failed"));
       } catch {
         setValidationResult("failed");
+        setValidationError("Network error");
       } finally {
         setValidating(false);
       }
@@ -314,9 +330,14 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
           </p>
         )}
         {validationResult && (
-          <Badge variant={validationResult === "success" ? "success" : "error"}>
-            {validationResult === "success" ? "Valid" : "Invalid"}
-          </Badge>
+          <div className="flex flex-col gap-1">
+            <Badge variant={validationResult === "success" ? "success" : "error"}>
+              {validationResult === "success" ? "Valid" : "Invalid"}
+            </Badge>
+            {validationResult === "failed" && validationError && (
+              <span className="text-sm text-red-500">{validationError}</span>
+            )}
+          </div>
         )}
         {error && (
           <p className="text-xs text-red-500 break-words">{error}</p>

@@ -20,6 +20,25 @@ import {
 } from "@/lib/oauth/constants/oauth";
 import { buildClineHeaders } from "@/shared/utils/clineAuth";
 
+async function readResponseError(response) {
+  const text = await response.text().catch(() => "");
+  if (!text) return "";
+  try {
+    const data = JSON.parse(text);
+    return data?.error?.message || data?.error || data?.message || data?.msg || text;
+  } catch {
+    return text;
+  }
+}
+
+function isAuthFailure(status) {
+  return status === 401 || status === 403;
+}
+
+function isReachableInferenceStatus(status) {
+  return !isAuthFailure(status) && status < 500;
+}
+
 // OAuth provider test endpoints
 const OAUTH_TEST_CONFIG = {
   claude: { checkExpiry: true, refreshable: true },
@@ -357,10 +376,28 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
     const modelsBase = connection.providerSpecificData?.baseUrl;
     if (!modelsBase) return { valid: false, error: "Missing base URL" };
     try {
-      const res = await fetchWithConnectionProxy(`${modelsBase.replace(/\/$/, "")}/models`, {
+      const baseUrl = modelsBase.replace(/\/$/, "");
+      const modelsRes = await fetchWithConnectionProxy(`${baseUrl}/models`, {
         headers: { "Authorization": `Bearer ${connection.apiKey}` },
       }, effectiveProxy);
-      return { valid: res.ok, error: res.ok ? null : "Invalid API key or base URL" };
+      if (modelsRes.ok) return { valid: true, error: null };
+      if (isAuthFailure(modelsRes.status)) return { valid: false, error: "Invalid API key" };
+
+      const chatRes = await fetchWithConnectionProxy(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${connection.apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: connection.defaultModel || "test",
+          max_tokens: 1,
+          stream: false,
+          messages: [{ role: "user", content: "ping" }],
+        }),
+      }, effectiveProxy);
+      const valid = chatRes.ok || isReachableInferenceStatus(chatRes.status);
+      return { valid, error: valid ? null : (await readResponseError(chatRes)) || "Invalid API key or base URL" };
     } catch (err) {
       return { valid: false, error: err.message };
     }
@@ -372,10 +409,28 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
     try {
       modelsBase = modelsBase.replace(/\/$/, "");
       if (modelsBase.endsWith("/messages")) modelsBase = modelsBase.slice(0, -9);
-      const res = await fetchWithConnectionProxy(`${modelsBase}/models`, {
+      const modelsRes = await fetchWithConnectionProxy(`${modelsBase}/models`, {
         headers: { "x-api-key": connection.apiKey, "anthropic-version": "2023-06-01", "Authorization": `Bearer ${connection.apiKey}` },
       }, effectiveProxy);
-      return { valid: res.ok, error: res.ok ? null : "Invalid API key or base URL" };
+      if (modelsRes.ok) return { valid: true, error: null };
+      if (isAuthFailure(modelsRes.status)) return { valid: false, error: "Invalid API key" };
+
+      const messagesRes = await fetchWithConnectionProxy(`${modelsBase}/messages`, {
+        method: "POST",
+        headers: {
+          "x-api-key": connection.apiKey,
+          "anthropic-version": "2023-06-01",
+          "Authorization": `Bearer ${connection.apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: connection.defaultModel || "test",
+          max_tokens: 1,
+          messages: [{ role: "user", content: "ping" }],
+        }),
+      }, effectiveProxy);
+      const valid = messagesRes.ok || isReachableInferenceStatus(messagesRes.status);
+      return { valid, error: valid ? null : (await readResponseError(messagesRes)) || "Invalid API key or base URL" };
     } catch (err) {
       return { valid: false, error: err.message };
     }

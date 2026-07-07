@@ -7,6 +7,33 @@ import { openaiToCommandCode } from "../../../../open-sse/translator/request/ope
 import { PROVIDER_ENDPOINTS } from "../../../shared/constants/config.js";
 import { normalizeProviderId } from "../../../lib/providerNormalization.js";
 
+async function readResponseError(response) {
+  const text = await response.text().catch(() => "");
+  if (!text) return "";
+  try {
+    const data = JSON.parse(text);
+    return data?.error?.message || data?.error || data?.message || data?.msg || text;
+  } catch {
+    return text;
+  }
+}
+
+function isAuthFailure(status) {
+  return status === 401 || status === 403;
+}
+
+function isReachableInferenceStatus(status) {
+  return !isAuthFailure(status) && status < 500;
+}
+
+function normalizeAnthropicBaseUrl(baseUrl) {
+  let normalizedBase = baseUrl?.trim().replace(/\/$/, "") || "";
+  if (normalizedBase.endsWith("/messages")) {
+    normalizedBase = normalizedBase.slice(0, -9);
+  }
+  return normalizedBase;
+}
+
 // Probe a webSearch/webFetch provider using its searchConfig/fetchConfig.
 // Returns true if API key is accepted (status !== 401 && !== 403).
 async function probeWebProvider(provider, apiKey) {
@@ -103,14 +130,36 @@ export async function POST_handler(req, res) {
         if (!node) {
           return res.status(404).json({ error: "OpenAI Compatible node not found" });
         }
-        const modelsUrl = `${node.baseUrl?.replace(/\/$/, "")}/models`;
-        const res = await fetch(modelsUrl, {
+        const baseUrl = node.baseUrl?.replace(/\/$/, "");
+        const modelsUrl = `${baseUrl}/models`;
+        const modelsRes = await fetch(modelsUrl, {
           headers: { "Authorization": `Bearer ${apiKey}` },
         });
-        isValid = res.ok;
+        if (modelsRes.ok) {
+          return res.json({ valid: true, error: null });
+        }
+        if (isAuthFailure(modelsRes.status)) {
+          return res.json({ valid: false, error: "Invalid API key" });
+        }
+
+        const model = body.defaultModel || body.modelId || providerSpecificData?.defaultModel || "test";
+        const chatRes = await fetch(`${baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: 1,
+            stream: false,
+            messages: [{ role: "user", content: "ping" }],
+          }),
+        });
+        isValid = chatRes.ok || isReachableInferenceStatus(chatRes.status);
         return res.json({
           valid: isValid,
-          error: isValid ? null : "Invalid API key",
+          error: isValid ? null : (await readResponseError(chatRes)) || "Invalid API key or base URL",
         });
       }
 
@@ -151,14 +200,11 @@ export async function POST_handler(req, res) {
           return res.status(404).json({ error: "Anthropic Compatible node not found" });
         }
 
-        let normalizedBase = node.baseUrl?.trim().replace(/\/$/, "") || "";
-        if (normalizedBase.endsWith("/messages")) {
-          normalizedBase = normalizedBase.slice(0, -9); // remove /messages
-        }
+        const normalizedBase = normalizeAnthropicBaseUrl(node.baseUrl);
 
         const modelsUrl = `${normalizedBase}/models`;
 
-        const res = await fetch(modelsUrl, {
+        const modelsRes = await fetch(modelsUrl, {
           headers: {
             "x-api-key": apiKey,
             "anthropic-version": "2023-06-01",
@@ -166,10 +212,32 @@ export async function POST_handler(req, res) {
           },
         });
 
-        isValid = res.ok;
+        if (modelsRes.ok) {
+          return res.json({ valid: true, error: null });
+        }
+        if (isAuthFailure(modelsRes.status)) {
+          return res.json({ valid: false, error: "Invalid API key" });
+        }
+
+        const model = body.defaultModel || body.modelId || providerSpecificData?.defaultModel || "test";
+        const messagesRes = await fetch(`${normalizedBase}/messages`, {
+          method: "POST",
+          headers: {
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: 1,
+            messages: [{ role: "user", content: "ping" }],
+          }),
+        });
+        isValid = messagesRes.ok || isReachableInferenceStatus(messagesRes.status);
         return res.json({
           valid: isValid,
-          error: isValid ? null : "Invalid API key",
+          error: isValid ? null : (await readResponseError(messagesRes)) || "Invalid API key or base URL",
         });
       }
 

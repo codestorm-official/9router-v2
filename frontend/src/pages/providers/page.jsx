@@ -936,7 +936,7 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
       return (
         <>
           <Badge variant="success">Valid</Badge>
-          {method === "chat" && (
+          {(method === "chat" || method === "messages") && (
             <span className="text-sm text-text-muted">
               (via inference test)
             </span>
@@ -1126,7 +1126,7 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
       return (
         <>
           <Badge variant="success">Valid</Badge>
-          {method === "chat" && (
+          {(method === "chat" || method === "messages") && (
             <span className="text-sm text-text-muted">
               (via inference test)
             </span>
